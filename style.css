@@ -12,7 +12,7 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background: url('images/tree1.webp') no-repeat;
+    background: url('images/tree2.webp') no-repeat;
     background-size: cover;
     background-position: center;
 }
@@ -23,7 +23,7 @@ header {
     left: 0;
     width: 100%;
     padding: 20px 100px;
-    background: rgb(18, 164, 18);
+    background: green;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -85,6 +85,7 @@ header {
 }
 
 .wrapper {
+    margin-top: 85px;
     position: relative;
     width: 400px;
     height: 440px;
@@ -98,7 +99,7 @@ header {
     align-items: center;
     overflow: hidden;
     transform: scale(0);
-    transition: height .2s ease;
+    transition: transform .5s ease, height .2s ease;
 }
 
 .wrapper.active-popup {
