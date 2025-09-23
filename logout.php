@@ -8,5 +8,5 @@ if (isset($_COOKIE["email"]) AND isset ($_COOKIE["password"])){
 }
     
 header("location:index.html");
-exit;
+exit();
 ?>
