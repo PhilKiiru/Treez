@@ -34,10 +34,6 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
     }else{
         $echo = "Invalid email or password!";
     }
-
-
-
-
 }
 
 ?>
