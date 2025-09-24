@@ -15,9 +15,13 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
     if($count == 1) {
         $user = mysqli_fetch_assoc($result);
 
-        $_SESSION["user_id"] = $user["userid"];
+        $_SESSION["user_id"] = $user["user_id"];
         $_SESSION["username"] = $user["username"];
         $_SESSION["email"] = $user["email"];
+        $_SESSION["phone"] = $user["phone"];
+        $_SESSION["location"] = $user["location"];
+        $_SESSION["role"] = $user["role"];
+
 
         if (isset($_POST["remember"])){
             setcookie("email", $email, time() + (86400 * 30), "/");

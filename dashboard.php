@@ -17,7 +17,10 @@ if (!isset($_SESSION['user_id'])) {
 </head>
 <body>
     <h2>Welcome, <?php echo $_SESSION["username"]; ?></h2>
-    <p>Youer email is: <?php  $_SESSION["email"]; ?></p>
+    <p>Your email is: <?php echo $_SESSION["email"]; ?></p>
+    <p>Your phone is: <?php echo $_SESSION["phone"]; ?></p>
+    <p>Your location is: <?php echo $_SESSION["location"]; ?></p>
+    <p>Your role is: <?php echo $_SESSION["role"]; ?></p>
     <a href="logout.php">Logout</a>
 </body>
 </html>
