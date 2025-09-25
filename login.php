@@ -1,6 +1,12 @@
 <?php
 
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 session_start();
+
+if (session_start() == PHP_SESSION_NONE) {
+    session_start();
+};
 include("db.php");
 
 
@@ -8,12 +14,16 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $_POST["email"];
     $password = $_POST["password"];
 
-    $sql = "SELECT * FROM users WHERE email = '$email' and password_hash ='$password'";
-    $result = mysqli_query($db,$sql);
-    $count = mysqli_num_rows($result);
+    $stmt = mysqli_prepare($db, "SELECT * FROM users WHERE email = ?");
+    mysqli_stmt_bind_param($stmt, "s", $email);
+    mysqli_stmt_execute($stmt);
 
-    if($count == 1) {
-        $user = mysqli_fetch_assoc($result);
+    $result = mysqli_stmt_get_result($stmt);
+
+    if($user = mysqli_fetch_assoc($result)) {
+        print_r($user);
+        exit();
+        if(password_verify($password, $user["PASSWORD_HASH"])) {
 
         $_SESSION["user_id"] = $user["user_id"];
         $_SESSION["username"] = $user["username"];
@@ -37,6 +47,9 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
         exit();       
     }else{
         $echo = "Invalid email or password!";
+    }
+    }else{
+        echo "No account for that email.";
     }
 }
 
