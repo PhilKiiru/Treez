@@ -5,7 +5,7 @@ include("db.php");
 
 
 if($_SERVER["REQUEST_METHOD"] == "POST") {
-    $email = $_POST["email"];
+    $email = trim($_POST["email"]);
     $password = $_POST["password"];
 
     $stmt = mysqli_prepare($db, "SELECT * FROM users WHERE email = ?");
@@ -15,8 +15,6 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
     $result = mysqli_stmt_get_result($stmt);
 
     if($user = mysqli_fetch_assoc($result)) {
-        print_r($user);
-        exit();
         if(password_verify($password, $user["PASSWORD_HASH"])) {
 
         $_SESSION["user_id"] = $user["user_id"];
@@ -40,7 +38,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
         header("location: dashboard.php"); 
         exit();       
     }else{
-        $echo = "Invalid email or password!";
+        $echo = "Invalid password!";
     }
     }else{
         echo "No account for that email.";
