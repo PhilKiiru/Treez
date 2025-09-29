@@ -11,28 +11,36 @@ if (!isset($_SESSION["user_id"]) || $_SESSION["role"] != "SELLER") {
 $seller_id = $_SESSION["user_id"];
 
 if($_SERVER["REQUEST_METHOD"] == "POST" && isset( $_POST["add_treeseedling"])) {
-    $name = mysqli_real_escape_string($db, $_POST["name"]);
+    $name = $_POST["name"];
     $price = floatval($_POST["price"]);
     $stock = intval($_POST["stock"]);
-    $description = mysqli_real_escape_string($db,$_POST["description"]);
+    $description = $_POST["description"];
     $seller_id = $_SESSION["user_id"];
 
-    $sql = "INSERT INTO treespecies (name, price, stock, description, seller_id) VALUES ('$name', '$price', '$stock', '$description', '$seller_id')";
-    mysqli_query($db, $sql);
+    $stmt = mysqli_prepare($db, "INSERT INTO treespecies (name, price, stock, description, seller_id) VALUES (?, ?, ?, ?, ?)");
+    mysqli_stmt_bind_param($stmt, "sdssi", $name, $price, $stock, $description, $seller_id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
 }
 
 if(isset($_GET["delete_id"])) {
     $delete_id = intval($_GET["delete_id"]);
-    mysqli_query($db, "DELETE FROM treespecies WHERE treespecies_id = $delete_id AND seller_id = $seller_id");
+    $stmt = mysqli_prepare($db, "DELETE FROM treespecies WHERE treespecies_id = ? AND seller_id = ?");
+    mysqli_stmt_bind_param($stmt, "ii", $delete_id, $seller_id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+
     header("Location: seller.php");
     exit();
 }
 if($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["update_status"])) {
     $order_id = intval($_POST["order_id"]);
-    $status = mysqli_real_escape_string($db, $_POST["status"]);
+    $status = $_POST["status"];
 
-    $sql = "UPDATE orders SET status='$status' WHERE ORDER_ID=$order_id";
-    mysqli_query($db, $sql);
+    $stmt = mysqli_prepare($db, "UPDATE orders SET ORDER_STATUS=? WHERE ORDER_ID=?");
+    mysqli_stmt_bind_param($stmt, "si", $status, $order_id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
 
     header("Location: seller.php");
     exit();
@@ -40,13 +48,16 @@ if($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["update_status"])) {
 
 if($_SERVER["REQUEST_METHOD"] == "POST" && isset( $_POST["update_treeseedling"])) {
     $id = intval($_POST["id"]);
-    $name = mysqli_real_escape_string($db, $_POST["name"]);
+    $name = $_POST["name"];
     $price = floatval($_POST["price"]);
     $stock = intval($_POST["stock"]);
-    $description = mysqli_real_escape_string($db, $_POST["description"]);
+    $description = $_POST["description"];
 
-    $sql = "UPDATE treespecies SET name ='$name', price='$price', stock='$stock', description='$description' WHERE treespecies_id=$id AND seller_id=$seller_id";
-    mysqli_query($db, $sql);
+    $stmt = mysqli_prepare($db, "UPDATE treespecies SET name =?, price=?, stock=?, description=? WHERE treespecies_id=? AND seller_id=?");
+    mysqli_stmt_bind_param($stmt, "sdisii", $name, $price, $stock, $description, $id, $seller_id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+    
     header("Location: seller.php");
     exit();
 }
@@ -122,17 +133,23 @@ if($_SERVER["REQUEST_METHOD"] == "POST" && isset( $_POST["update_treeseedling"])
     $seller_id = intval($_SESSION["user_id"]);
 
     $query = "
-    SELECT o.order_id, o.order_date, o.status, u.username AS buyer, t.name AS tree_name, d.quantity, d.price
+    SELECT 
+    o.ORDER_ID AS order_id, 
+    o.ORDER_DATE AS order_date, 
+    o.ORDER_STATUS AS order_status, 
+    u.USERNAME AS buyer, 
+    t.name AS tree_name, 
+    o.QUANTITY AS quantity, 
+    o.TOTAL_PRICE AS total_price
     FROM orders o
-    JOIN order_details d ON o.order_id = d.order_id
-    JOIN treespecies t ON d.treespecies_id = t.treespecies_id
-    JOIN users u ON o.buyer_id = u.user_id
+    JOIN treespecies t ON o.TREESEEDLING_ID = t.treespecies_id
+    JOIN users u ON o.BUYER_ID = u.user_id
     WHERE t.seller_id = ?
-    ORDER BY o.order_date DESC
+    ORDER BY o.ORDER_DATE DESC
     ";
 
     $stmt = mysqli_prepare($db, $query);
-    if (!stmt) {
+    if (!$stmt) {
         echo "<p>Error preparing query: " . htmlspecialchars(mysqli_error($db)) . "</p>";
     } else {
         mysqli_stmt_bind_param($stmt, "i", $seller_id);
@@ -155,13 +172,13 @@ if($_SERVER["REQUEST_METHOD"] == "POST" && isset( $_POST["update_treeseedling"])
             </tr>";
 
         while ($row = mysqli_fetch_assoc($orders)) {
-            $order_id = $row['ORDER_ID'];
-            $order_date = $row['ORDER_DATE'];
-            $status = $row['ORDER_STATUS'];
+            $order_id = $row['order_id'];
+            $order_date = $row['order_date'];
+            $status = $row['order_status'];
             $buyer = $row['buyer'];
             $tree_name = $row['tree_name'];
-            $quantity = $row['QUANTITY'];
-            $total = $row['TOTAL_PRICE'];
+            $quantity = $row['quantity'];
+            $total = $row['total_price'];
 
             echo "<tr>
             <td>" . htmlspecialchars($order_id) . "</td>
@@ -170,11 +187,11 @@ if($_SERVER["REQUEST_METHOD"] == "POST" && isset( $_POST["update_treeseedling"])
             <td>" . htmlspecialchars($buyer) . "</td>
             <td>" . htmlspecialchars($tree_name) . "</td>
             <td>" . htmlspecialchars($quantity) . "</td>
-            <td>" . htmlspecialchars(number_format($total, 2)) . "KES</td>
+            <td>" . htmlspecialchars(number_format($total, 2)) . " KES</td>
 
             <td>
             <form method='POST' action='' style='display:inline;'>
-            <input type='hidden' name='order_id' value='" . htmlspecialchars(order_id) . "'>
+            <input type='hidden' name='order_id' value='" . htmlspecialchars($order_id) . "'>
             <select name ='status'>
                 <option value='PENDING' ".($status =='PENDING'?'selected':'').">Pending</option>
                 <option value='COMPLETED' ".($status =='COMPLETED'?'selected':'').">Completed</option>
