@@ -98,7 +98,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST" && isset( $_POST["update_treeseedling"])
                 </tr>";
     while ($row = mysqli_fetch_array($result)) {
         echo "<tr>
-                <td>{$row['name']}</td>
+                <td>{$row['COMMON_NAME']}</td>
                 <td>{$row['price']}</td>
                 <td>{$row['stock']}</td>
                 <td>{$row['description']}</td>
@@ -138,12 +138,12 @@ if($_SERVER["REQUEST_METHOD"] == "POST" && isset( $_POST["update_treeseedling"])
     o.ORDER_DATE AS order_date, 
     o.ORDER_STATUS AS order_status, 
     u.USERNAME AS buyer, 
-    t.name AS tree_name, 
+    t.COMMON_NAME AS tree_name, 
     o.QUANTITY AS quantity, 
     o.TOTAL_PRICE AS total_price
     FROM orders o
-    JOIN treespecies t ON o.TREESEEDLING_ID = t.treespecies_id
-    JOIN users u ON o.BUYER_ID = u.user_id
+    JOIN treespecies t ON o.TREESEEDLING_ID = t.TREESPECIES_ID
+    JOIN users u ON o.BUYER_ID = u.USER_ID
     WHERE t.seller_id = ?
     ORDER BY o.ORDER_DATE DESC
     ";

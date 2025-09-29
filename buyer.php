@@ -59,7 +59,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["place_order"])) {
 
     <?php
     $result = mysqli_query($db, "SELECT *FROM treespecies");
-    if (mysqli_num_rows($results) > 0) {
+    if (mysqli_num_rows($result) > 0) {
         echo "<table border='1' cellpadding='10'>
         <tr>
             <th>Name</th>
@@ -137,14 +137,14 @@ if($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["place_order"])) {
     <?php 
 
     $result = mysqli_query($db, "
-    SELECT o.ORDER_ID, o>ORDER_DATE, o.ORDER_STATUS, t.name AS tree_name, o.QUANTITY, o.TOTAL_PRICE
+    SELECT o.ORDER_ID, o.ORDER_DATE, o.ORDER_STATUS, t.COMMON_NAME AS tree_name, o.QUANTITY, o.TOTAL_PRICE
     FROM orders o
     JOIN treespecies t ON o.TREESEEDLING_ID = t.treespecies_id
     WHERE o.BUYER_ID = $buyer_id
     ORDER BY o.ORDER_DATE DESC");
 
     if(mysqli_num_rows($result) > 0) {
-        echo "table border='1' cellpadding='10'>
+        echo "<table border='1' cellpadding='10'>
                 <tr>
                     <th>Order ID</th>
                     <th>Date</th>
@@ -159,7 +159,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["place_order"])) {
                     <td>" . htmlspecialchars($row['ORDER_ID']) . "</td>
                     <td>" . htmlspecialchars($row['ORDER_DATE']) . "</td>
                     <td>" . htmlspecialchars($row['ORDER_STATUS']) . "</td>
-                    <td>" . htmlspecialchars($row['tree_name']) . "</td>
+                    <td>" . htmlspecialchars($row['COMMON_NAME']) . "</td>
                     <td>" . htmlspecialchars($row['QUANTITY']) . "</td>
                     <td>" . htmlspecialchars($row['TOTAL_PRICE']) . "</td>
                 </tr>";

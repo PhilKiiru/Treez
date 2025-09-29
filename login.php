@@ -3,46 +3,46 @@
 session_start();
 include("db.php");
 
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 
 if($_SERVER["REQUEST_METHOD"] == "POST") {
-    $email = trim($_POST["email"]);
+    $email = $_POST["email"];
     $password = $_POST["password"];
 
-    $stmt = mysqli_prepare($db, "SELECT * FROM users WHERE email = ?");
+    $stmt = mysqli_prepare($db, "SELECT USER_ID, USERNAME, ROLE, PASSWORD_HASH FROM users WHERE EMAIL = ?");
     mysqli_stmt_bind_param($stmt, "s", $email);
     mysqli_stmt_execute($stmt);
 
     $result = mysqli_stmt_get_result($stmt);
 
-    if($user = mysqli_fetch_assoc($result)) {
-        if(password_verify($password, $user["PASSWORD_HASH"])) {
+    if($row = mysqli_fetch_assoc($result)) {
+        
+        if(password_verify($password, $row["PASSWORD_HASH"])) {
 
-        $_SESSION["user_id"] = $user["user_id"];
-        $_SESSION["username"] = $user["username"];
-        $_SESSION["email"] = $user["email"];
-        $_SESSION["phone"] = $user["phone"];
-        $_SESSION["location"] = $user["location"];
-        $_SESSION["role"] = $user["role"];
+        $_SESSION["user_id"] = $row["USER_ID"];
+        $_SESSION["username"] = $row["USERNAME"];
+        $_SESSION["role"] = $row["ROLE"];
 
-
-        if (isset($_POST["remember"])){
-            setcookie("email", $email, time() + (86400 * 30), "/");
-            setcookie("password", $password, time() + (86400 * 30), "/");
+        if($row["ROLE"] == "SELLER") {
+            header("Location: seller.php");
+            exit();
+        } elseif ($row["ROLE"] == "BUYER") {
+            header("Location: buyer.php");
+            exit();
+        } elseif ($row["ROLE"] == "ADMIN") {
+            header("Location: admin.php");
+            exit();
+        }
         } else {
-                setcookie("email", "", time() - (3600), "/");      
-
-                setcookie("password", "", time() - (3600), "/");
-            }
+            echo "<p style='color:red;'>Invalid password.</p>";
+        }
     
-
-        header("location: dashboard.php"); 
-        exit();       
     }else{
         $echo = "Invalid password!";
     }
-    }else{
-        echo "No account for that email.";
-    }
+    mysqli_stmt_close($stmt);
 }
 
 ?>
