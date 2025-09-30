@@ -166,7 +166,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["place_order"])) {
         <div class="card-body">
             <?php 
             $result = mysqli_query($db, "
-            SELECT o.ORDER_ID, o.ORDER_DATE, o.ORDER_STATUS, t.name AS tree_name, o.QUANTITY, o.TOTAL_PRICE
+            SELECT o.ORDER_ID, o.ORDER_DATE, o.ORDER_STATUS, t.COMMON_NAME AS tree_name, o.QUANTITY, o.TOTAL_PRICE
             FROM orders o
             JOIN treespecies t ON o.TREESEEDLING_ID = t.treespecies_id
             WHERE o.BUYER_ID = $buyer_id
