@@ -159,7 +159,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["place_order"])) {
                     <td>" . htmlspecialchars($row['ORDER_ID']) . "</td>
                     <td>" . htmlspecialchars($row['ORDER_DATE']) . "</td>
                     <td>" . htmlspecialchars($row['ORDER_STATUS']) . "</td>
-                    <td>" . htmlspecialchars($row['COMMON_NAME']) . "</td>
+                    <td>" . htmlspecialchars($row['tree_name']) . "</td>
                     <td>" . htmlspecialchars($row['QUANTITY']) . "</td>
                     <td>" . htmlspecialchars($row['TOTAL_PRICE']) . "</td>
                 </tr>";
@@ -171,7 +171,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["place_order"])) {
 
     ?>
 
-    <br><a href="logout.php"></a>
+    <br><a href="logout.php">Logout</a>
     
 </body>
 </html>

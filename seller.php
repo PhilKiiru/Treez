@@ -17,7 +17,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST" && isset( $_POST["add_treeseedling"])) {
     $description = $_POST["description"];
     $seller_id = $_SESSION["user_id"];
 
-    $stmt = mysqli_prepare($db, "INSERT INTO treespecies (name, price, stock, description, seller_id) VALUES (?, ?, ?, ?, ?)");
+    $stmt = mysqli_prepare($db, "INSERT INTO treespecies (COMMON_NAME, price, stock, description, seller_id) VALUES (?, ?, ?, ?, ?)");
     mysqli_stmt_bind_param($stmt, "sdssi", $name, $price, $stock, $description, $seller_id);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
@@ -53,7 +53,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST" && isset( $_POST["update_treeseedling"])
     $stock = intval($_POST["stock"]);
     $description = $_POST["description"];
 
-    $stmt = mysqli_prepare($db, "UPDATE treespecies SET name =?, price=?, stock=?, description=? WHERE treespecies_id=? AND seller_id=?");
+    $stmt = mysqli_prepare($db, "UPDATE treespecies SET COMMON_NAME =?, price=?, stock=?, description=? WHERE treespecies_id=? AND seller_id=?");
     mysqli_stmt_bind_param($stmt, "sdisii", $name, $price, $stock, $description, $id, $seller_id);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);

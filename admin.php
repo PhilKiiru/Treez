@@ -35,7 +35,7 @@ if(isset($_GET['delete_user'])) {
         <div class="container-fluid">
             <a class="navbar-brand" href="#">Tree Seedling Admin</a>
             <span class="navbar-text text-white ms-auto">
-                Welcome, <?php echo htmlspecialchars($_SESSIOn["username"]); ?> (Admin)
+                Welcome, <?php echo htmlspecialchars($_SESSION["username"]); ?> (Admin)
             </span>
             <a href="logout.php" class="btn btn-outline-light ms-3">Logout</a>
         </div>
@@ -70,7 +70,7 @@ if(isset($_GET['delete_user'])) {
                     <td>" . htmlspecialchars($row['LOCATION']) . "</td>
                     <td>";
             if ($row['USER_ID'] != $_SESSION["user_id"]) {
-                echo "<a class='btn btn-sm btn-danger' href='admin.php?delete_users=" . $row['USER_ID'] . "' onclick=\"return confirm('Delete this user?');\">Delete<a>";
+                echo "<a class='btn btn-sm btn-danger' href='admin.php?delete_user=" . $row['USER_ID'] . "' onclick=\"return confirm('Delete this user?');\">Delete<a>";
 
             } else {
                 echo "<span class='text-muted'>Self</span>";
@@ -87,7 +87,7 @@ if(isset($_GET['delete_user'])) {
         <h3 class="mt-5 mb-3">View Orders</h3>
         <?php
         $orders = mysqli_query($db, "
-        SELECT o.ORDER_ID, o.ORDER_DATE, o.ORDER_STATUS, u.USERNAME AS buyer, t.COMMON_NAME AS tree_name, o.QUENATITY, o.TOTAL PRICE
+        SELECT o.ORDER_ID, o.ORDER_DATE, o.ORDER_STATUS, u.USERNAME AS buyer, t.COMMON_NAME AS tree_name, o.QUANTITY, o.TOTAL_PRICE
         FROM orders o
         JOIN users u ON o.BUYER_ID = u .USER_ID
         JOIN treespecies t ON o.TREESEEDLINGS_ID = t.TREESPECIES_ID
@@ -111,7 +111,7 @@ if(isset($_GET['delete_user'])) {
                         <td>" . htmlspecialchars($row['ORDER_ID']) . "</td>
                         <td>" . htmlspecialchars($row['ORDER_DATE']) . "</td>
                         <td><span class='badge bg-" .
-                            ($row['ORDER_STATUS'] == "CPMPLETED" ? "success" : ($row['ORDER_STATUS'] == "PENDING" ? "warning text-dark" : "danger")) . "'>". htmlspecialchars($row['ORDER_STATUS']) . "</span></td>
+                            ($row['ORDER_STATUS'] == "COMPLETED" ? "success" : ($row['ORDER_STATUS'] == "PENDING" ? "warning text-dark" : "danger")) . "'>". htmlspecialchars($row['ORDER_STATUS']) . "</span></td>
                         <td>" . htmlspecialchars($row['buyer']) . "</td>   
                         <td>" . htmlspecialchars($row['tree_name']) . "</td>   
                         <td>" . htmlspecialchars($row['QUANTTIY']) . "</td>   
