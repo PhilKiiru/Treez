@@ -7,6 +7,7 @@
     font-family: 'Poppins', sans-serif;
 }
 
+/* --- MAIN PAGE BODY STYLE (for forms/wrappers) --- */
 body {
     display: flex;
     justify-content: center;
@@ -17,6 +18,41 @@ body {
     background-position: center;
 }
 
+/* --- STATIC MAP PAGE OVERRIDE STYLE --- */
+/* This class ensures the map page does not use the flex centering, which causes layout problems */
+.map-page-body {
+    display: block; /* Overrides the flex layout */
+    min-height: auto;
+    background: #eef7ee; 
+    text-align: center;
+    padding-top: 20px;
+}
+
+/* --- STATIC MAP IMAGE STYLES --- */
+.static-map-container {
+    margin: 40px auto;
+    width: 700px; 
+    border: 3px solid #0f6e25; 
+    border-radius: 10px;
+    overflow: hidden; 
+}
+
+.static-map-img {
+    display: block;
+    width: 100%;
+    height: 550px; /* Explicit height to match the image dimensions in the URL */
+}
+
+.map-legend {
+    font-size: 0.9em;
+    padding: 10px;
+    background: #fff;
+    border-top: 1px solid #ccc;
+    font-weight: 500;
+}
+
+
+/* --- HEADER AND NAVIGATION STYLES (Your Original Code) --- */
 header {
     position: fixed;
     top: 0;
@@ -84,6 +120,7 @@ header {
     color: #162938;
 }
 
+/* --- WRAPPER AND FORM STYLES (Your Original Code) --- */
 .wrapper {
     margin-top: 85px;
     position: relative;
@@ -258,17 +295,6 @@ header {
     text-decoration: underline;
 }
 
-.input-box label {
-    position: absolute;
-    top: 50%;
-    left: 5px;
-    transform: translateY(-50%);
-    color: #162938;
-    font-weight: 500;
-    pointer-events: none;
-    transition: .5s
-}
-
 .input-box select {
     width: 100%;
     height: 100%;
@@ -300,5 +326,3 @@ header {
     font-size: 1em;
     color: #0a0acb;
 }
-
-

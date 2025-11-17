@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nairobi Tree Nurseries – Static Map</title>
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        .map-page-body {
+            display: block;
+            background: #eef7ee;
+            text-align: center;
+            padding-top: 120px;
+        }
+
+        .static-map-box {
+            margin: 20px auto;
+            width: 90%;
+            max-width: 730px;
+            border: 3px solid #0f6e25;
+            border-radius: 10px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .static-map-img {
+            width: 100%;
+            height: 550px;
+            display: block;
+        }
+
+        .map-legend {
+            padding: 12px;
+            font-size: 0.92em;
+            background: #fff;
+            border-top: 1px solid #ccc;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body class="map-page-body">
+
+<header>
+    <h2 class="logo">Treez</h2>
+    <nav class="navigation">
+        <a href="index.html">Home</a>
+        <a href="#">About</a>
+        <a href="#">Services</a>
+        <a href="#">Contact</a>
+        <a href="static_map.html">Map</a>
+        <button class="btnLogin-popup">Login</button>
+    </nav>
+</header>
+
+<h2>Nairobi Tree Nurseries – Static Map</h2>
+<p>Locations of key tree nurseries within Nairobi County.</p>
+
+<div class="static-map-box">
+
+    <img 
+        class="static-map-img"
+        src="https://api.jawg.io/static?marker=color:1392FC,size:small,label:A%7C-1.2675,36.8120&marker=color:9F9EFD,size:small,label:B%7C-1.2368,36.8304&marker=color:fc7d13,size:small,label:C%7C-1.2833,36.7855&marker=color:92fc13,size:small,label:D%7C-1.3223,36.8289&marker=color:fc1392,size:small,label:E%7C-1.2817,36.8459&marker=color:e5442a,size:small,label:F%7C-1.2893,36.7869&marker=color:4a1e14,size:small,label:G%7C-1.31944,36.89611&zoom=12&center=-1.2921,36.8219&size=600x400&layer=jawg-streets&format=png&access-token=04nPl78m1MxMx3CExtPv2lLynL74xEOXJvIH4ZTCkxZem8ALJGhJUwTUtY6Fbduo"
+        alt="Static map of Nairobi Tree Nurseries"
+    >
+
+    <div class="map-legend">
+        <strong>Legend:</strong><br>
+        <b>A</b> - Westlands Botanical Garden<br>
+        <b>B</b> - Karura Forest Nursery<br>
+        <b>C</b> - Kileleshwa: The Pot and Plant Garden<br>
+        <b>D</b> - South C Nursery<br>
+        <b>E</b> - Paradise Plant Nursery<br>
+        <b>F</b> - Kilimani: Alpha Tree Nursery<br>
+        <b>F</b> - Pipeline: Prime Tree Nursery
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

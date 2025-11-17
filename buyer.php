@@ -107,6 +107,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["cancel_order"])) {
         <a href="logout.php" class="btn btn-outline-light ms-3">Logout</a>
     </div>
 </nav>
+<div class="container mb-4">
+    <a href="static_map.html" class="btn btn-success">View Nairobi Tree Nursery Map</a>
+</div>
+
 
 <div class="container">
     <?php if(isset($success_msg)) echo "<div class='alert alert-success'>$success_msg</div>"; ?>
