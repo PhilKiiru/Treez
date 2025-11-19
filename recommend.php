@@ -1,33 +1,73 @@
 <?php
-function getRecommendations($treeName) {
-    $filePath = __DIR__ . "/ml/recommendations.csv";
-    
-    if (!file_exists($filePath)) {
+// recommend.php
+require_once "db.php";
+
+/**
+ * Reads rules from recommendations.csv and returns matching products.
+ * CSV format must include columns:
+ *   antecedent, consequent, confidence
+ */
+
+function parse_frozenset($str) {
+    // Extracts the value from frozenset({'name'})
+    if (preg_match("/\{\s*'([^']+)'\s*\}/", $str, $m)) {
+        return $m[1];
+    }
+    return trim($str);
+}
+
+function get_recommendations(string $selectedName): array {
+    global $db;
+
+    $file = "ml/recommendations.csv";
+
+    if (!file_exists($file)) {
         return [];
     }
 
-    $file = fopen($filePath, "r");
-    $recs = [];
+    $csv = fopen($file, "r");
+    if (!$csv) {
+        return [];
+    }
 
-    fgetcsv($file); // skip header row
+    $headers = fgetcsv($csv); // read header line
+    $recommendations = [];
 
-    while (($row = fgetcsv($file)) !== false) {
+    while (($row = fgetcsv($csv)) !== false) {
+        $data = array_combine($headers, $row);
 
-        $ante = strtolower($row[0]);      // antecedents
-        $cons = strtolower($row[1]);      // consequents
-        $conf = floatval($row[3]);        // confidence
+        // Use correct column names and parse frozenset
+        $antecedent = isset($data['antecedents']) ? parse_frozenset($data['antecedents']) : '';
+        $consequent = isset($data['consequents']) ? parse_frozenset($data['consequents']) : '';
 
-        // match the current seedling with antecedents
-        if (strpos($ante, strtolower($treeName)) !== false) {
-            $recs[] = [
-                "ante" => $ante,
-                "cons" => $cons,
-                "confidence" => $conf
-            ];
+        if (strtolower(trim($antecedent)) === strtolower(trim($selectedName))) {
+            // Find matching recommended product in DB
+            $stmt = mysqli_prepare(
+                $db,
+                "SELECT TREESPECIES_ID, COMMON_NAME, PRICE, IMAGE
+                 FROM treespecies
+                 WHERE LOWER(COMMON_NAME) = LOWER(?)
+                 LIMIT 1"
+            );
+
+            mysqli_stmt_bind_param($stmt, "s", $consequent);
+            mysqli_stmt_execute($stmt);
+            $res = mysqli_stmt_get_result($stmt);
+            $row_db = mysqli_fetch_assoc($res);
+            mysqli_stmt_close($stmt);
+
+            if ($row_db) {
+                $recommendations[] = [
+                    "id"         => $row_db["TREESPECIES_ID"],
+                    "name"       => $row_db["COMMON_NAME"],
+                    "price"      => $row_db["PRICE"],
+                    "image"      => $row_db["IMAGE"],
+                    "confidence" => isset($data['confidence']) ? floatval($data['confidence']) : null
+                ];
+            }
         }
     }
 
-    fclose($file);
-    return $recs;
+    fclose($csv);
+    return $recommendations;
 }
-?>
