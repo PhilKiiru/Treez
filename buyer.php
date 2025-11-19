@@ -123,10 +123,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["place_order"])) {
                 if ($affected === 0) throw new Exception("Stock update failed.");
             }
 
+
             mysqli_commit($db);
             $_SESSION['cart'] = [];
-            $success_msg = "Order placed successfully!";
-            header("Location: buyer.php");
+            // Show success message with direct M-Pesa payment link
+            echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Order Placed</title>';
+            echo '<meta name="viewport" content="width=device-width, initial-scale=1">';
+            echo '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">';
+            echo '</head><body class="bg-light">';
+            echo '<div class="container py-5">';
+            echo '<div class="alert alert-success">Order placed successfully!<br>Your Order ID is <strong>' . intval($order_id) . '</strong>.</div>';
+            echo '<a href="mpesa.php?order_id=' . intval($order_id) . '&amount=' . number_format($grand_total,2,'.','') . '" class="btn btn-success">Pay with M-Pesa</a>';
+            echo '<a href="cash_payment.php?order_id=' . intval($order_id) . '" class="btn btn-warning ms-2">Pay with Cash</a>';
+            echo '<a href="buyer.php" class="btn btn-secondary ms-2">Back to Dashboard</a>';
+            echo '</div></body></html>';
             exit();
 
         } catch (Exception $e) {
@@ -197,6 +207,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancel_order"])) {
 </head>
 
 <body class="bg-light">
+<?php if (isset($_GET['cash_paid'])): ?>
+<div class="alert alert-success text-center">Order marked as paid by cash.</div>
+<?php endif; ?>
 
 <nav class="navbar navbar-dark bg-success mb-4">
     <div class="container-fluid">
@@ -399,19 +412,14 @@ if (mysqli_num_rows($orders) > 0):
 
     <td>
         <?php if ($o['ORDER_STATUS'] === "PENDING"): ?>
-        <form method="POST">
-            <input type="hidden" name="order_id"
-                         value="<?= intval($o['ORDER_ID']); ?>">
-            <button name="cancel_order"
-                            class="btn btn-danger btn-sm"
-                            onclick="return confirm('Cancel this order?');">
-                Cancel
-            </button>
+        <form method="POST" style="display:inline;">
+            <input type="hidden" name="order_id" value="<?= intval($o['ORDER_ID']); ?>">
+            <button name="cancel_order" class="btn btn-danger btn-sm" onclick="return confirm('Cancel this order?');">Cancel</button>
         </form>
         <?php else: ?>
-    <span class="text-muted">-</span>
-    <?php endif; ?>
-  </td>
+        <span class="text-muted">-</span>
+        <?php endif; ?>
+    </td>
 </tr>
 <?php endwhile; ?>
 

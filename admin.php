@@ -1,3 +1,13 @@
+// ----------------- MARK AS DELIVERED -----------------
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["mark_delivered"])) {
+    $order_id = intval($_POST["order_id"]);
+    $stmt = mysqli_prepare($db, "UPDATE orders SET ORDER_STATUS='DELIVERED' WHERE ORDER_ID=? AND (ORDER_STATUS='PAID (CASH)' OR ORDER_STATUS='PAID (MPESA)' OR ORDER_STATUS='PROCESSING')");
+    mysqli_stmt_bind_param($stmt, "i", $order_id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+    header("Location: admin.php");
+    exit();
+}
 <?php
 session_start();
 include("db.php");
@@ -148,6 +158,13 @@ if (isset($_GET["delete_order"])) {
                     echo "<form method='POST' class='d-inline'>
                               <input type='hidden' name='order_id' value='{$row['ORDER_ID']}'>
                               <button type='submit' name='cancel_order' class='btn btn-sm btn-warning'>Cancel</button>
+                          </form> ";
+                }
+                // Show 'Mark as Delivered' for paid but not completed/cancelled orders
+                if (in_array($row['ORDER_STATUS'], ["PAID (CASH)", "PAID (MPESA)", "PROCESSING"])) {
+                    echo "<form method='POST' class='d-inline ms-1'>
+                              <input type='hidden' name='order_id' value='{$row['ORDER_ID']}'>
+                              <button type='submit' name='mark_delivered' class='btn btn-sm btn-success'>Mark as Delivered</button>
                           </form> ";
                 }
                 echo "<a class='btn btn-sm btn-danger' href='admin.php?delete_order={$row['ORDER_ID']}' onclick=\"return confirm('Delete order?');\">Delete</a>";

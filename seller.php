@@ -9,6 +9,25 @@ if (!isset($_SESSION["user_id"]) || $_SESSION["role"] != "SELLER") {
 
 $seller_id = intval($_SESSION["user_id"]);
 
+// ----------------- ACCEPT ORDER (SELLER) -----------------
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["accept_order"])) {
+    $order_id = intval($_POST["order_id"]);
+    // Only allow seller to accept if the order contains their seedlings and is pending
+    $stmt = mysqli_prepare($db, "
+        UPDATE orders o
+        JOIN orderdetails od ON o.ORDER_ID = od.ORDER_ID
+        JOIN treespecies t ON od.TREESPECIES_ID = t.TREESPECIES_ID
+        SET o.ORDER_STATUS='PROCESSING'
+        WHERE o.ORDER_ID=? AND t.SELLER_ID=? AND o.ORDER_STATUS='PENDING'
+    ");
+    mysqli_stmt_bind_param($stmt, "ii", $order_id, $seller_id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+    header("Location: seller.php");
+    exit();
+}
+
+
 // ----------------- ADD NEW SEEDLING -----------------
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_treeseedling"])) {
     $name = $_POST["name"];
@@ -65,6 +84,7 @@ if (isset($_GET["delete_id"])) {
     header("Location: seller.php");
     exit();
 }
+// End PHP logic, now start HTML
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -131,6 +151,90 @@ if (isset($_GET["delete_id"])) {
         echo "</div>";
     } else {
         echo "<div class='alert alert-info'>You haven't added any seedlings yet.</div>";
+    }
+    ?>
+
+    <!-- Orders for Your Seedlings -->
+    <h3 class="mt-5 mb-3">Orders for Your Seedlings</h3>
+    <?php
+    $orders = mysqli_query($db, "
+        SELECT o.ORDER_ID, o.ORDER_DATE, o.ORDER_STATUS, o.TOTAL_PRICE,
+               u.USERNAME AS buyer,
+               t.COMMON_NAME, t.SCIENTIFIC_NAME, t.DESCRIPTION, od.QUANTITY, od.PRICE
+        FROM orders o
+        JOIN users u ON o.BUYER_ID = u.USER_ID
+        JOIN orderdetails od ON o.ORDER_ID = od.ORDER_ID
+        JOIN treespecies t ON od.TREESPECIES_ID = t.TREESPECIES_ID
+        WHERE t.SELLER_ID = $seller_id
+        ORDER BY o.ORDER_DATE DESC
+    ");
+
+    if (mysqli_num_rows($orders) > 0) {
+        echo "<table class='table table-hover table-bordered'>
+                <thead class='table-dark'>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Buyer</th>
+                        <th>Tree</th>
+                        <th>Qty</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                        <th>Description</th>
+                        <th>Action</th>
+                    </tr>
+                </thead><tbody>";
+        while ($row = mysqli_fetch_assoc($orders)) {
+            $item_total = $row['PRICE'] * $row['QUANTITY'];
+            $badge = ($row['ORDER_STATUS']=="DELIVERED")?"success":(($row['ORDER_STATUS']=="PENDING")?"warning text-dark":"danger");
+            echo "<tr>
+                <td>{$row['ORDER_ID']}</td>
+                <td>{$row['ORDER_DATE']}</td>
+                <td><span class='badge bg-$badge'>{$row['ORDER_STATUS']}</span></td>
+                <td>{$row['buyer']}</td>
+                <td>{$row['COMMON_NAME']}<br><em>{$row['SCIENTIFIC_NAME']}</em></td>
+                <td>{$row['QUANTITY']}</td>
+                <td>{$row['PRICE']}</td>
+                <td><strong>$item_total</strong></td>
+                <td>".nl2br(htmlspecialchars($row['DESCRIPTION']))."</td>
+                <td>";
+            // Accept order if pending
+            if ($row['ORDER_STATUS'] == "PENDING") {
+                echo "<form method='POST' class='d-inline ms-1'>
+                          <input type='hidden' name='order_id' value='{$row['ORDER_ID']}'>
+                          <button type='submit' name='accept_order' class='btn btn-sm btn-primary'>Accept Order</button>
+                      </form> ";
+            }
+            // Mark as delivered if paid or processing
+            if (in_array($row['ORDER_STATUS'], ["PAID (CASH)", "PAID (MPESA)", "PROCESSING"])) {
+                echo "<form method='POST' class='d-inline ms-1'>
+                          <input type='hidden' name='order_id' value='{$row['ORDER_ID']}'>
+                          <button type='submit' name='mark_delivered' class='btn btn-sm btn-success'>Mark as Delivered</button>
+                      </form> ";
+            }
+            // ----------------- ACCEPT ORDER (SELLER) -----------------
+            if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["accept_order"])) {
+                $order_id = intval($_POST["order_id"]);
+                // Only allow seller to accept if the order contains their seedlings and is pending
+                $stmt = mysqli_prepare($db, "
+                    UPDATE orders o
+                    JOIN orderdetails od ON o.ORDER_ID = od.ORDER_ID
+                    JOIN treespecies t ON od.TREESPECIES_ID = t.TREESPECIES_ID
+                    SET o.ORDER_STATUS='PROCESSING'
+                    WHERE o.ORDER_ID=? AND t.SELLER_ID=? AND o.ORDER_STATUS='PENDING'
+                ");
+                mysqli_stmt_bind_param($stmt, "ii", $order_id, $seller_id);
+                mysqli_stmt_execute($stmt);
+                mysqli_stmt_close($stmt);
+                header("Location: seller.php");
+                exit();
+            }
+            echo "</td></tr>";
+        }
+        echo "</tbody></table>";
+    } else {
+        echo "<div class='alert alert-info'>No orders for your seedlings yet.</div>";
     }
     ?>
 </div>
