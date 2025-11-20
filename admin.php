@@ -1,13 +1,3 @@
-// ----------------- MARK AS DELIVERED -----------------
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["mark_delivered"])) {
-    $order_id = intval($_POST["order_id"]);
-    $stmt = mysqli_prepare($db, "UPDATE orders SET ORDER_STATUS='DELIVERED' WHERE ORDER_ID=? AND (ORDER_STATUS='PAID (CASH)' OR ORDER_STATUS='PAID (MPESA)' OR ORDER_STATUS='PROCESSING')");
-    mysqli_stmt_bind_param($stmt, "i", $order_id);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_close($stmt);
-    header("Location: admin.php");
-    exit();
-}
 <?php
 session_start();
 include("db.php");

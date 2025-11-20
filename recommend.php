@@ -1,12 +1,5 @@
 <?php
-// recommend.php
 require_once "db.php";
-
-/**
- * Reads rules from recommendations.csv and returns matching products.
- * CSV format must include columns:
- *   antecedent, consequent, confidence
- */
 
 function parse_frozenset($str) {
     // Extracts the value from frozenset({'name'})
