@@ -174,7 +174,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancel_order"])) {
 <nav class="navbar navbar-dark bg-success mb-4">
     <div class="container-fluid">
         <a class="navbar-brand" href="#">Treez Buyer</a>
-
+        <a href="static_map.html" class="btn btn-light ms-3">View Map</a>
         <div class="ms-auto">
             <span class="text-white me-3">
                 Welcome, <?= e($_SESSION["username"]); ?>
