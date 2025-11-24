@@ -36,21 +36,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_treeseedling"])) {
     $stock = intval($_POST["stock"]);
     $description = trim($_POST["description"] ?? '');
 
-    $target_dir = "uploads/";
-    if (!is_dir($target_dir)) mkdir($target_dir, 0777, true);
-    $image_name = time() . "_" . basename($_FILES["image"]["name"]);
-    $target_file = $target_dir . $image_name;
+    // Check for duplicate COMMON_NAME for this seller
+    $dup_check = mysqli_prepare($db, "SELECT 1 FROM treespecies WHERE COMMON_NAME = ? AND SELLER_ID = ?");
+    mysqli_stmt_bind_param($dup_check, "si", $name, $seller_id);
+    mysqli_stmt_execute($dup_check);
+    mysqli_stmt_store_result($dup_check);
+    if (mysqli_stmt_num_rows($dup_check) > 0) {
+        // Duplicate found, show error and stop
+        echo '<div class="alert alert-danger">A seedling with this COMMON NAME already exists for you.</div>';
+        mysqli_stmt_close($dup_check);
+    } else {
+        mysqli_stmt_close($dup_check);
+        $target_dir = "uploads/";
+        if (!is_dir($target_dir)) mkdir($target_dir, 0777, true);
+        $image_name = time() . "_" . basename($_FILES["image"]["name"]);
+        $target_file = $target_dir . $image_name;
 
-    if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
-        $stmt = mysqli_prepare($db, "INSERT INTO treespecies 
-            (COMMON_NAME, SCIENTIFIC_NAME, PRICE, STOCK, DESCRIPTION, SELLER_ID, IMAGE) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, "ssdsiss", $name, $scientific, $price, $stock, $description, $seller_id, $target_file);
-        mysqli_stmt_execute($stmt);
-        mysqli_stmt_close($stmt);
+        if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
+            $stmt = mysqli_prepare($db, "INSERT INTO treespecies 
+                (COMMON_NAME, SCIENTIFIC_NAME, PRICE, STOCK, DESCRIPTION, SELLER_ID, IMAGE) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)");
+            mysqli_stmt_bind_param($stmt, "ssdsiss", $name, $scientific, $price, $stock, $description, $seller_id, $target_file);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+        }
+        header("Location: seller.php");
+        exit();
     }
-    header("Location: seller.php");
-    exit();
 }
 
 // ----------------- EDIT SEEDLING -----------------
