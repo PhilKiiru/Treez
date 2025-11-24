@@ -1,4 +1,3 @@
-
 <?php
 // buyer.php – Fully rewritten & optimized
 
@@ -85,45 +84,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["place_order"])) {
             mysqli_stmt_bind_param($stmt, "id", $buyer_id, $grand_total);
             mysqli_stmt_execute($stmt);
             $order_id = mysqli_insert_id($db);
-            mysqli_stmt_close($stmt);
-
-            if (!$order_id) throw new Exception("Order creation failed.");
-
-            // Insert details & update stock
-            foreach ($_SESSION["cart"] as $tree_id => $qty) {
-
-                // Get price
-                $stmt = mysqli_prepare($db, "SELECT PRICE FROM treespecies WHERE TREESPECIES_ID=?");
-                mysqli_stmt_bind_param($stmt, "i", $tree_id);
-                mysqli_stmt_execute($stmt);
-                $res = mysqli_stmt_get_result($stmt);
-                $row = mysqli_fetch_assoc($res);
-                mysqli_stmt_close($stmt);
-
-                $price = floatval($row['PRICE']);
-
-                // Insert detail
-                $stmt = mysqli_prepare($db,
-                    "INSERT INTO orderdetails (ORDER_ID, TREESPECIES_ID, QUANTITY, PRICE)
-                     VALUES (?, ?, ?, ?)"
-                );
-                mysqli_stmt_bind_param($stmt, "iiid", $order_id, $tree_id, $qty, $price);
-                mysqli_stmt_execute($stmt);
-                mysqli_stmt_close($stmt);
-
-                // Update stock
-                $stmt = mysqli_prepare($db,
-                    "UPDATE treespecies SET STOCK = STOCK - ? WHERE TREESPECIES_ID=? AND STOCK >= ?"
-                );
-                mysqli_stmt_bind_param($stmt, "iii", $qty, $tree_id, $qty);
-                mysqli_stmt_execute($stmt);
-                $affected = mysqli_stmt_affected_rows($stmt);
-                mysqli_stmt_close($stmt);
-
-                if ($affected === 0) throw new Exception("Stock update failed.");
-            }
-
-
             mysqli_commit($db);
             $_SESSION['cart'] = [];
             // Show success message with direct M-Pesa payment link
@@ -240,53 +200,73 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancel_order"])) {
 ------------------------------------------------------------ -->
 <h3>Available Trees</h3>
 <div class="row">
+<form method="GET" class="mb-3">
+    <div class="input-group">
+        <input type="text" name="search" id="searchInput" class="form-control" placeholder="Search by name..." value="<?= e($_GET['search'] ?? ''); ?>">
+        <button class="btn btn-outline-success" type="submit">Search</button>
+    </div>
+</form>
+<script>
+// Auto-submit the form if search is cleared
+  document.addEventListener('DOMContentLoaded', function() {
+    var searchInput = document.getElementById('searchInput');
+    var form = searchInput && searchInput.form;
+    if (searchInput && form) {
+      searchInput.addEventListener('input', function() {
+        if (this.value === '') {
+          form.submit();
+        }
+      });
+    }
+  });
+</script>
+<div class="row">
 
 <?php
-$stmt = mysqli_prepare(
-    $db,
-    "SELECT TREESPECIES_ID, COMMON_NAME, SCIENTIFIC_NAME, PRICE, STOCK, DESCRIPTION, IMAGE
-     FROM treespecies
-     WHERE STOCK > 0"
-);
+$search = trim($_GET['search'] ?? '');
+if ($search !== '') {
+        $like = '%' . $search . '%';
+        $stmt = mysqli_prepare(
+                $db,
+                "SELECT TREESPECIES_ID, COMMON_NAME, SCIENTIFIC_NAME, PRICE, STOCK, DESCRIPTION, IMAGE
+                 FROM treespecies
+                 WHERE STOCK > 0 AND (COMMON_NAME LIKE ? OR SCIENTIFIC_NAME LIKE ?)"
+        );
+        mysqli_stmt_bind_param($stmt, "ss", $like, $like);
+} else {
+        $stmt = mysqli_prepare(
+                $db,
+                "SELECT TREESPECIES_ID, COMMON_NAME, SCIENTIFIC_NAME, PRICE, STOCK, DESCRIPTION, IMAGE
+                 FROM treespecies
+                 WHERE STOCK > 0"
+        );
+}
 mysqli_stmt_execute($stmt);
 $trees = mysqli_stmt_get_result($stmt);
 
+if (mysqli_num_rows($trees) === 0) {
+        echo '<div class="col-12"><div class="alert alert-warning">No trees found.</div></div>';
+}
 while ($tree = mysqli_fetch_assoc($trees)):
 ?>
-  <div class="col-md-4">
-    <div class="card mb-4 shadow-sm">
-
-
-     <a href="tree_details.php?id=<?= intval($tree['TREESPECIES_ID']); ?>">
-       <img src="<?= e($tree['IMAGE']); ?>"
-           class="card-img-top"
-           style="height:200px; object-fit:cover;">
-     </a>
-
-
-            <div class="card-body">
-                <h5 style="text-align:center;">
-                    <a href="tree_details.php?id=<?= intval($tree['TREESPECIES_ID']); ?>" style="text-decoration:none; color:inherit;">
-                        <?= e($tree['COMMON_NAME']); ?>
-                    </a>
-                </h5>
-
-
-
-
-
-
-
-      </div>
+    <div class="col-md-4">
+        <div class="card mb-4 shadow-sm">
+         <a href="tree_details.php?id=<?= intval($tree['TREESPECIES_ID']); ?>">
+             <img src="<?= e($tree['IMAGE']); ?>"
+                     class="card-img-top"
+                     style="height:200px; object-fit:cover;">
+         </a>
+                        <div class="card-body">
+                                <h5 style="text-align:center;">
+                                        <a href="tree_details.php?id=<?= intval($tree['TREESPECIES_ID']); ?>" style="text-decoration:none; color:inherit;">
+                                                <?= e($tree['COMMON_NAME']); ?>
+                                        </a>
+                                </h5>
+                        </div>
+        </div>
     </div>
-  </div>
 <?php endwhile; mysqli_stmt_close($stmt); ?>
-</div>
 
-
-<!-- ------------------------------------------------------------
-     CART
------------------------------------------------------------- -->
 <h3>Your Cart</h3>
 
 <?php if (!empty($_SESSION['cart'])): ?>
@@ -349,7 +329,6 @@ foreach ($_SESSION['cart'] as $tree_id => $qty):
 
 <!-- ------------------------------------------------------------
      PAST ORDERS
------------------------------------------------------------- -->
 <h3 class="mt-4">My Orders</h3>
 
 <?php

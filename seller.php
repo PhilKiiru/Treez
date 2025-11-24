@@ -34,7 +34,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_treeseedling"])) {
     $scientific = $_POST["scientific_name"];
     $price = floatval($_POST["price"]);
     $stock = intval($_POST["stock"]);
-    $description = $_POST["description"];
+    $description = trim($_POST["description"] ?? '');
 
     $target_dir = "uploads/";
     if (!is_dir($target_dir)) mkdir($target_dir, 0777, true);
@@ -60,7 +60,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["edit_treeseedling"])) 
     $scientific = $_POST["scientific_name"];
     $price = floatval($_POST["price"]);
     $stock = intval($_POST["stock"]);
-    $description = $_POST["description"];
+    $description = trim($_POST["description"] ?? '');
 
     $stmt = mysqli_prepare($db, "UPDATE treespecies 
         SET COMMON_NAME=?, SCIENTIFIC_NAME=?, PRICE=?, STOCK=?, DESCRIPTION=? 
@@ -124,8 +124,20 @@ if (isset($_GET["delete_id"])) {
 
     <!-- Seedlings -->
     <h3 class="mb-3">Your Tree Seedlings</h3>
+    <form method="GET" class="mb-3">
+      <div class="input-group">
+        <input type="text" name="search" class="form-control" placeholder="Search your seedlings..." value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+        <button class="btn btn-outline-primary" type="submit">Search</button>
+      </div>
+    </form>
     <?php 
-    $result = mysqli_query($db,"SELECT * FROM treespecies WHERE SELLER_ID=$seller_id");
+    $search = trim($_GET['search'] ?? '');
+    if ($search !== '') {
+        $like = '%' . mysqli_real_escape_string($db, $search) . '%';
+        $result = mysqli_query($db, "SELECT * FROM treespecies WHERE SELLER_ID=$seller_id AND (COMMON_NAME LIKE '$like' OR SCIENTIFIC_NAME LIKE '$like')");
+    } else {
+        $result = mysqli_query($db,"SELECT * FROM treespecies WHERE SELLER_ID=$seller_id");
+    }
     if(mysqli_num_rows($result) > 0) {
         echo "<div class='row'>";
         while ($row = mysqli_fetch_assoc($result)) {
