@@ -98,6 +98,11 @@ if (isset($_GET["delete_id"])) {
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
     <div class="container-fluid">
         <a class="navbar-brand" href="#">Treez Seller</a>
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="#" id="dashboardLink">Dashboard</a>
+            </li>
+        </ul>
         <span class="navbar-text text-white ms-auto">
             Welcome, <?= htmlspecialchars($_SESSION["username"]); ?> (Seller)
         </span>
@@ -106,6 +111,187 @@ if (isset($_GET["delete_id"])) {
 </nav>
 
 <div class="container">
+        <!-- Charts Section (hidden by default) -->
+        <div id="seller-charts" style="display:none;">
+            <h3 class="mb-3">Seedling Sales & Recommendations</h3>
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <canvas id="salesPieChart"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <?php
+                    // Get the seller's seedlings from the database
+                    $seedlings = [];
+                    $result = mysqli_query($db, "SELECT COMMON_NAME FROM treespecies WHERE SELLER_ID = $seller_id");
+                    while ($row = mysqli_fetch_assoc($result)) {
+                        $seedlings[] = $row['COMMON_NAME'];
+                    }
+                    ?>
+                    <h5 class="mb-2">Find Recommended Tree Seedlings</h5>
+                    <div class="input-group mb-2">
+                        <input type="text" id="seedlingInput" class="form-control" placeholder="Enter tree seedling name...">
+                        <button class="btn btn-primary" id="recommendBtn" type="button">Recommend</button>
+                    </div>
+                    <ul id="recommendList" class="list-group mb-2" style="display:none;"></ul>
+                </div>
+            </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <?php
+        // Pie chart data: top 5 most sold seedlings for this seller
+        $pie = mysqli_query($db, "SELECT t.COMMON_NAME, SUM(od.QUANTITY) as total_sold FROM orderdetails od JOIN treespecies t ON od.TREESPECIES_ID = t.TREESPECIES_ID WHERE t.SELLER_ID = $seller_id GROUP BY t.COMMON_NAME ORDER BY total_sold DESC LIMIT 5");
+        $pie_labels = [];
+        $pie_data = [];
+        while($r = mysqli_fetch_assoc($pie)) {
+                $pie_labels[] = $r['COMMON_NAME'];
+                $pie_data[] = (int)$r['total_sold'];
+        }
+        ?>
+        <script>
+                        // Load recommendations from CSV (PHP to JS)
+                        <?php
+                        $rec_map = [];
+                        if (($handle = fopen("ml/recommendations.csv", "r")) !== FALSE) {
+                            $header = fgetcsv($handle);
+                            while (($data = fgetcsv($handle)) !== FALSE) {
+                                $ant = $data[0];
+                                $con = $data[1];
+                                $conf = $data[5];
+                                // Only use single-item antecedents (not sets)
+                                if (preg_match_all("/'([^']+)'/", $ant, $a_matches) && count($a_matches[1]) === 1) {
+                                    $a_name = $a_matches[1][0];
+                                    $a_name_lc = strtolower($a_name);
+                                    if (!isset($rec_map[$a_name_lc])) $rec_map[$a_name_lc] = [];
+                                    if (preg_match_all("/'([^']+)'/", $con, $c_matches)) {
+                                        foreach ($c_matches[1] as $c_name) {
+                                            $rec_map[$a_name_lc][] = [
+                                                'name' => $c_name,
+                                                'confidence' => floatval($conf)
+                                            ];
+                                        }
+                                    }
+                                }
+                            }
+                            fclose($handle);
+                        }
+                        ?>
+                        const recommendationsData = <?php echo json_encode($rec_map); ?>;
+                // Show recommendations after seller inputs a tree seedling name
+                function showRecommendations(input) {
+                    const recommendList = document.getElementById('recommendList');
+                    const key = input.trim().toLowerCase();
+                    let recommendations = [];
+                    if (key && recommendationsData[key]) {
+                        recommendations = recommendationsData[key];
+                    }
+                    if (key) {
+                        if (recommendations.length > 0) {
+                            recommendList.innerHTML = recommendations.map(r => `<li class=\"list-group-item d-flex justify-content-between align-items-center\">${r.name}<span class=\"badge bg-primary rounded-pill\">${(r.confidence*100).toFixed(0)}%</span></li>`).join('');
+                        } else {
+                            recommendList.innerHTML = '<li class=\"list-group-item\">No specific recommendations found</li>';
+                        }
+                        recommendList.style.display = 'block';
+                    } else {
+                        recommendList.innerHTML = '';
+                        recommendList.style.display = 'none';
+                    }
+                }
+                document.getElementById('seedlingInput').addEventListener('input', function() {
+                    showRecommendations(this.value);
+                });
+                document.getElementById('recommendBtn').addEventListener('click', function() {
+                    const input = document.getElementById('seedlingInput').value;
+                    showRecommendations(input);
+                });
+                document.getElementById('seedlingInput').addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        showRecommendations(this.value);
+                    }
+                });
+        let chartsInitialized = false;
+        let recBarChart = null;
+        document.getElementById('dashboardLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            const chartsDiv = document.getElementById('seller-charts');
+            chartsDiv.style.display = chartsDiv.style.display === 'none' ? 'block' : 'none';
+            if (!chartsInitialized && chartsDiv.style.display === 'block') {
+                // Pie chart for most selling seedlings
+                const pieCtx = document.getElementById('salesPieChart').getContext('2d');
+                new Chart(pieCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: <?= json_encode($pie_labels) ?>,
+                        datasets: [{
+                            data: <?= json_encode($pie_data) ?>,
+                            backgroundColor: ['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f'],
+                        }]
+                    },
+                    options: {
+                        plugins: { legend: { position: 'bottom' } },
+                        title: { display: true, text: 'Top 5 Most Selling Seedlings' }
+                    }
+                });
+                // Bar chart placeholder for recommendations (empty initially)
+                const recBarCtx = document.getElementById('recommendBarChart').getContext('2d');
+                recBarChart = new Chart(recBarCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Recommendation Confidence',
+                            data: [],
+                            backgroundColor: '#4e79a7'
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        plugins: { legend: { display: false } },
+                        title: { display: true, text: 'Recommended Seedlings' }
+                    }
+                });
+                chartsInitialized = true;
+            }
+        });
+        // When a seedling is selected, show recommended seedlings (placeholder logic)
+        document.getElementById('recommendSelect').addEventListener('change', function() {
+            const selected = this.value;
+            const recommendList = document.getElementById('recommendList');
+            let recommendations = [];
+            if (selected) {
+                // Example: static recommendations, replace with real data
+                if (selected === 'Grevillea robusta') {
+                    recommendations = [
+                        { name: 'Croton megalocarpus', confidence: 0.85 },
+                        { name: 'Markhamia lutea', confidence: 0.7 }
+                    ];
+                } else if (selected === 'Croton megalocarpus') {
+                    recommendations = [
+                        { name: 'Grevillea robusta', confidence: 0.8 },
+                        { name: 'Eucalyptus saligna', confidence: 0.6 }
+                    ];
+                } else if (selected === 'Markhamia lutea') {
+                    recommendations = [
+                        { name: 'Grevillea robusta', confidence: 0.7 },
+                        { name: 'Croton megalocarpus', confidence: 0.6 }
+                    ];
+                } else {
+                    // Always show a default recommendation for any seedling
+                    recommendations = [
+                        { name: 'No specific recommendations found', confidence: 0 }
+                    ];
+                }
+            }
+            // Update list
+            if (selected) {
+                recommendList.innerHTML = recommendations.map(r => `<li class=\"list-group-item d-flex justify-content-between align-items-center\">${r.name}${r.confidence ? `<span class=\"badge bg-primary rounded-pill\">${(r.confidence*100).toFixed(0)}%</span>` : ''}</li>`).join('');
+                recommendList.style.display = 'block';
+            } else {
+                recommendList.innerHTML = '';
+                recommendList.style.display = 'none';
+            }
+        });
+        </script>
+
     <!-- Add New Seedling -->
     <h3 class="mb-3">Add New Seedling</h3>
     <form method="POST" action="" enctype="multipart/form-data" class="mb-5">
@@ -249,6 +435,7 @@ if (isset($_GET["delete_id"])) {
         echo "<div class='alert alert-info'>No orders for your seedlings yet.</div>";
     }
     ?>
+
 </div>
 </body>
 </html>
