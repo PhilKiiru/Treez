@@ -12,12 +12,28 @@ $seller_id = intval($_SESSION["user_id"]);
 // ----------------- ACCEPT ORDER (SELLER) -----------------
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["accept_order"])) {
     $order_id = intval($_POST["order_id"]);
-    // Only allow seller to accept if the order contains their seedlings and is pending
     $stmt = mysqli_prepare($db, "
         UPDATE orders o
         JOIN orderdetails od ON o.ORDER_ID = od.ORDER_ID
         JOIN treespecies t ON od.TREESPECIES_ID = t.TREESPECIES_ID
         SET o.ORDER_STATUS='PROCESSING'
+        WHERE o.ORDER_ID=? AND t.SELLER_ID=? AND o.ORDER_STATUS='PENDING'
+    ");
+    mysqli_stmt_bind_param($stmt, "ii", $order_id, $seller_id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+    header("Location: seller.php");
+    exit();
+}
+
+// ----------------- CANCEL ORDER (SELLER) -----------------
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["cancel_order"])) {
+    $order_id = intval($_POST["order_id"]);
+    $stmt = mysqli_prepare($db, "
+        UPDATE orders o
+        JOIN orderdetails od ON o.ORDER_ID = od.ORDER_ID
+        JOIN treespecies t ON od.TREESPECIES_ID = t.TREESPECIES_ID
+        SET o.ORDER_STATUS='CANCELLED'
         WHERE o.ORDER_ID=? AND t.SELLER_ID=? AND o.ORDER_STATUS='PENDING'
     ");
     mysqli_stmt_bind_param($stmt, "ii", $order_id, $seller_id);
@@ -367,6 +383,12 @@ if (isset($_GET["delete_id"])) {
     <!-- Orders for Your Seedlings -->
     <h3 class="mt-5 mb-3">Orders for Your Seedlings</h3>
     <?php
+    // Filter logic
+    $filter_status = $_GET['filter_status'] ?? '';
+    $where_status = '';
+    if ($filter_status === 'accepted') {
+        $where_status = " AND o.ORDER_STATUS = 'PROCESSING' ";
+    }
     $orders = mysqli_query($db, "
         SELECT o.ORDER_ID, o.ORDER_DATE, o.ORDER_STATUS, o.TOTAL_PRICE,
                u.USERNAME AS buyer,
@@ -375,9 +397,20 @@ if (isset($_GET["delete_id"])) {
         JOIN users u ON o.BUYER_ID = u.USER_ID
         JOIN orderdetails od ON o.ORDER_ID = od.ORDER_ID
         JOIN treespecies t ON od.TREESPECIES_ID = t.TREESPECIES_ID
-        WHERE t.SELLER_ID = $seller_id
+        WHERE t.SELLER_ID = $seller_id $where_status
         ORDER BY o.ORDER_DATE DESC
     ");
+
+    // Filter form
+    echo '<form method="GET" class="mb-3">
+        <div class="input-group" style="max-width:350px;">
+            <label class="input-group-text" for="filter_status">Show</label>
+            <select name="filter_status" id="filter_status" class="form-select" onchange="this.form.submit()">
+                <option value="">All Orders</option>
+                <option value="accepted"' . ($filter_status==='accepted'?' selected':'') . '>Accepted Orders</option>
+            </select>
+        </div>
+    </form>';
 
     if (mysqli_num_rows($orders) > 0) {
         echo "<table class='table table-hover table-bordered'>
@@ -397,11 +430,27 @@ if (isset($_GET["delete_id"])) {
                 </thead><tbody>";
         while ($row = mysqli_fetch_assoc($orders)) {
             $item_total = $row['PRICE'] * $row['QUANTITY'];
-            $badge = ($row['ORDER_STATUS']=="DELIVERED")?"success":(($row['ORDER_STATUS']=="PENDING")?"warning text-dark":"danger");
+            // Status badge logic
+            if ($row['ORDER_STATUS'] == 'PROCESSING') {
+                $badge = 'info';
+                $status_text = 'Accepted';
+            } elseif ($row['ORDER_STATUS'] == 'PENDING') {
+                $badge = 'warning text-dark';
+                $status_text = 'Pending';
+            } elseif ($row['ORDER_STATUS'] == 'DELIVERED') {
+                $badge = 'success';
+                $status_text = 'Delivered';
+            } elseif ($row['ORDER_STATUS'] == 'CANCELLED') {
+                $badge = 'danger';
+                $status_text = 'Cancelled';
+            } else {
+                $badge = 'secondary';
+                $status_text = htmlspecialchars($row['ORDER_STATUS']);
+            }
             echo "<tr>
                 <td>{$row['ORDER_ID']}</td>
                 <td>{$row['ORDER_DATE']}</td>
-                <td><span class='badge bg-$badge'>{$row['ORDER_STATUS']}</span></td>
+                <td><span class='badge bg-$badge'>$status_text</span></td>
                 <td>{$row['buyer']}</td>
                 <td>{$row['COMMON_NAME']}<br><em>{$row['SCIENTIFIC_NAME']}</em></td>
                 <td>{$row['QUANTITY']}</td>
@@ -415,30 +464,17 @@ if (isset($_GET["delete_id"])) {
                           <input type='hidden' name='order_id' value='{$row['ORDER_ID']}'>
                           <button type='submit' name='accept_order' class='btn btn-sm btn-primary'>Accept Order</button>
                       </form> ";
+                echo "<form method='POST' class='d-inline ms-1'>
+                          <input type='hidden' name='order_id' value='{$row['ORDER_ID']}'>
+                          <button type='submit' name='cancel_order' class='btn btn-sm btn-danger' onclick=\"return confirm('Cancel this order?');\">Cancel Order</button>
+                      </form> ";
             }
-            // Mark as delivered if paid or processing
-            if (in_array($row['ORDER_STATUS'], ["PAID (CASH)", "PAID (MPESA)", "PROCESSING"])) {
+            // Mark as delivered if processing
+            if ($row['ORDER_STATUS'] == "PROCESSING") {
                 echo "<form method='POST' class='d-inline ms-1'>
                           <input type='hidden' name='order_id' value='{$row['ORDER_ID']}'>
                           <button type='submit' name='mark_delivered' class='btn btn-sm btn-success'>Mark as Delivered</button>
                       </form> ";
-            }
-            // ----------------- ACCEPT ORDER (SELLER) -----------------
-            if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["accept_order"])) {
-                $order_id = intval($_POST["order_id"]);
-                // Only allow seller to accept if the order contains their seedlings and is pending
-                $stmt = mysqli_prepare($db, "
-                    UPDATE orders o
-                    JOIN orderdetails od ON o.ORDER_ID = od.ORDER_ID
-                    JOIN treespecies t ON od.TREESPECIES_ID = t.TREESPECIES_ID
-                    SET o.ORDER_STATUS='PROCESSING'
-                    WHERE o.ORDER_ID=? AND t.SELLER_ID=? AND o.ORDER_STATUS='PENDING'
-                ");
-                mysqli_stmt_bind_param($stmt, "ii", $order_id, $seller_id);
-                mysqli_stmt_execute($stmt);
-                mysqli_stmt_close($stmt);
-                header("Location: seller.php");
-                exit();
             }
             echo "</td></tr>";
         }

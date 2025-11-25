@@ -106,8 +106,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["place_order"])) {
                 $phone = $row['PHONE'];
             }
             mysqli_stmt_close($stmt);
-            // Redirect to payment options page
-            header("Location: payment.php?order_id=$order_id&amount=$grand_total&phone=" . urlencode($phone));
+            // Redirect to orders page (no payment options)
+            header("Location: my_orders.php?order_placed=1");
             exit();
         } catch (Exception $e) {
             mysqli_rollback($db);

@@ -77,14 +77,26 @@ while ($row = mysqli_fetch_assoc($orders)) {
         <td><?= e($o['ORDER_DATE']); ?></td>
         <td>
             <?php
-            $badge = match($o['ORDER_STATUS']) {
-                    'COMPLETED' => 'success',
-                    'PENDING'   => 'warning text-dark',
-                    default     => 'danger'
-            };
+            // Show 'Accepted' for PROCESSING orders
+            if ($o['ORDER_STATUS'] === 'PROCESSING') {
+                $badge = 'info';
+                $status_text = 'Accepted';
+            } elseif ($o['ORDER_STATUS'] === 'COMPLETED') {
+                $badge = 'success';
+                $status_text = 'Completed';
+            } elseif ($o['ORDER_STATUS'] === 'PENDING') {
+                $badge = 'warning text-dark';
+                $status_text = 'Pending';
+            } elseif ($o['ORDER_STATUS'] === 'CANCELLED') {
+                $badge = 'danger';
+                $status_text = 'Cancelled';
+            } else {
+                $badge = 'secondary';
+                $status_text = e($o['ORDER_STATUS']);
+            }
             ?>
             <span class="badge bg-<?= $badge; ?>">
-                <?= e($o['ORDER_STATUS']); ?>
+                <?= $status_text; ?>
             </span>
         </td>
         <td><?= e($o['COMMON_NAME']); ?></td>
