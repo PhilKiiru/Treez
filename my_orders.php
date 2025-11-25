@@ -6,8 +6,21 @@ if (!isset($_SESSION["user_id"]) || $_SESSION["role"] !== "BUYER") {
     header("Location: login.php");
     exit();
 }
+// Fetch buyer's phone number from DB
 $buyer_id = intval($_SESSION['user_id']);
 function e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
+$buyer_phone = '';
+$stmt_phone = mysqli_prepare($db, "SELECT PHONE FROM users WHERE USER_ID = ?");
+mysqli_stmt_bind_param($stmt_phone, "i", $buyer_id);
+mysqli_stmt_execute($stmt_phone);
+$res_phone = mysqli_stmt_get_result($stmt_phone);
+if ($row_phone = mysqli_fetch_assoc($res_phone)) {
+    $buyer_phone = preg_replace('/\D/', '', $row_phone['PHONE']); // Remove non-digits
+    if (strpos($buyer_phone, '0') === 0) {
+        $buyer_phone = '254' . substr($buyer_phone, 1); // Convert 07... to 2547...
+    }
+}
+mysqli_stmt_close($stmt_phone);
 ?>
 <!doctype html>
 <html lang="en">
@@ -105,6 +118,17 @@ while ($row = mysqli_fetch_assoc($orders)) {
             <form method="POST" action="buyer.php" style="display:inline;">
                 <input type="hidden" name="order_id" value="<?= intval($o['ORDER_ID']); ?>">
                 <button name="cancel_order" class="btn btn-danger btn-sm" onclick="return confirm('Cancel this order?');">Cancel</button>
+            </form>
+            <form method="POST" action="buyer.php" style="display:inline; margin-left:5px;">
+                <input type="hidden" name="order_id" value="<?= intval($o['ORDER_ID']); ?>">
+                <input type="hidden" name="pay_with_cash" value="1">
+                <button type="submit" class="btn btn-warning btn-sm">Pay with Cash</button>
+            </form>
+            <form method="POST" action="mpesa_stkpush.php" style="display:inline; margin-left:5px;">
+                <input type="hidden" name="order_id" value="<?= intval($o['ORDER_ID']); ?>">
+                <input type="hidden" name="amount" value="<?= number_format($item_total,2,'.',''); ?>">
+                <input type="hidden" name="phone" value="<?= e($buyer_phone) ?>">
+                <button type="submit" class="btn btn-success btn-sm">Pay with M-Pesa</button>
             </form>
             <?php else: ?>
             <span class="text-muted">-</span>

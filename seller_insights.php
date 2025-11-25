@@ -70,14 +70,22 @@ $seller_id = intval($_SESSION["user_id"]);
         </div>
         <div class="col-md-6">
 <?php
-// Pie chart data: top 5 most sold seedlings for this seller
-$pie = mysqli_query($db, "SELECT t.COMMON_NAME, SUM(od.QUANTITY) as total_sold FROM orderdetails od JOIN treespecies t ON od.TREESPECIES_ID = t.TREESPECIES_ID WHERE t.SELLER_ID = $seller_id GROUP BY t.COMMON_NAME ORDER BY total_sold DESC LIMIT 5");
-$pie_labels = [];
-$pie_data = [];
-while($r = mysqli_fetch_assoc($pie)) {
-    $pie_labels[] = $r['COMMON_NAME'];
-    $pie_data[] = (int)$r['total_sold'];
+// Pie chart data: top 5 most ordered seedlings from the training CSV (matches notebook/bar chart)
+$pie_counts = [];
+if (($handle = fopen('Machine learning/philkiiru_orders.csv', 'r')) !== FALSE) {
+    $header = fgetcsv($handle);
+    $col_idx = array_search('COMMON_NAME', array_map('trim', $header));
+    while (($row = fgetcsv($handle)) !== FALSE) {
+        $name = trim($row[$col_idx]);
+        if ($name !== '') {
+            $pie_counts[$name] = ($pie_counts[$name] ?? 0) + 1;
+        }
+    }
+    fclose($handle);
 }
+arsort($pie_counts);
+$pie_labels = array_slice(array_keys($pie_counts), 0, 5);
+$pie_data = array_slice(array_values($pie_counts), 0, 5);
 ?>
         </div>
     </div>
