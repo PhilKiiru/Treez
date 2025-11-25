@@ -35,8 +35,7 @@ function e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 <?php
 $stmt = mysqli_prepare(
     $db,
-    "SELECT o.ORDER_ID, o.ORDER_DATE, o.ORDER_STATUS,
-            t.COMMON_NAME, od.QUANTITY, od.PRICE
+    "SELECT o.ORDER_ID, o.ORDER_DATE, o.ORDER_STATUS, t.COMMON_NAME, od.QUANTITY, od.PRICE
      FROM orders o
      JOIN orderdetails od ON o.ORDER_ID = od.ORDER_ID
      JOIN treespecies t ON od.TREESPECIES_ID = t.TREESPECIES_ID
@@ -54,7 +53,6 @@ while ($row = mysqli_fetch_assoc($orders)) {
     $orders_by_day[$date][] = $row;
 }
 ?>
-<!-- Table header and old table removed as orders are now grouped by day and each group has its own table header. -->
 <?php foreach ($orders_by_day as $day => $orders_list): ?>
     <h5 class="mt-4 mb-2 text-primary">Orders for <?= e(date('l, F j, Y', strtotime($day))); ?></h5>
     <table class="table table-bordered">
@@ -77,7 +75,6 @@ while ($row = mysqli_fetch_assoc($orders)) {
         <td><?= e($o['ORDER_DATE']); ?></td>
         <td>
             <?php
-            // Show 'Accepted' for PROCESSING orders
             if ($o['ORDER_STATUS'] === 'PROCESSING') {
                 $badge = 'info';
                 $status_text = 'Accepted';

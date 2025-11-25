@@ -12,14 +12,9 @@ $seller_id = intval($_SESSION["user_id"]);
 // ----------------- ACCEPT ORDER (SELLER) -----------------
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["accept_order"])) {
     $order_id = intval($_POST["order_id"]);
-    $stmt = mysqli_prepare($db, "
-        UPDATE orders o
-        JOIN orderdetails od ON o.ORDER_ID = od.ORDER_ID
-        JOIN treespecies t ON od.TREESPECIES_ID = t.TREESPECIES_ID
-        SET o.ORDER_STATUS='PROCESSING'
-        WHERE o.ORDER_ID=? AND t.SELLER_ID=? AND o.ORDER_STATUS='PENDING'
-    ");
-    mysqli_stmt_bind_param($stmt, "ii", $order_id, $seller_id);
+    $status = 'PROCESSING';
+    $stmt = mysqli_prepare($db, "UPDATE orders SET ORDER_STATUS=? WHERE ORDER_ID=? AND ORDER_STATUS='PENDING'");
+    mysqli_stmt_bind_param($stmt, "si", $status, $order_id);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
     header("Location: seller.php");
