@@ -54,13 +54,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["place_order"])) {
 
     if (!empty($_SESSION["cart"])) {
-
         // Start transaction
         mysqli_begin_transaction($db);
-
         try {
             $grand_total = 0;
-
+            $cart_items = [];
             // Validate stock and compute total
             foreach ($_SESSION["cart"] as $tree_id => $qty) {
                 $stmt = mysqli_prepare($db, "SELECT PRICE, STOCK FROM treespecies WHERE TREESPECIES_ID=?");
@@ -69,13 +67,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["place_order"])) {
                 $res = mysqli_stmt_get_result($stmt);
                 $row = mysqli_fetch_assoc($res);
                 mysqli_stmt_close($stmt);
-
                 if (!$row) throw new Exception("Tree not found.");
                 if ($row['STOCK'] < $qty) throw new Exception("Not enough stock.");
-
                 $grand_total += floatval($row['PRICE']) * $qty;
+                $cart_items[] = [
+                    'tree_id' => $tree_id,
+                    'qty' => $qty,
+                    'price' => floatval($row['PRICE'])
+                ];
             }
-
             // Insert order
             $stmt = mysqli_prepare($db,
                 "INSERT INTO orders (BUYER_ID, TOTAL_PRICE, ORDER_STATUS, ORDER_DATE)
@@ -84,26 +84,25 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["place_order"])) {
             mysqli_stmt_bind_param($stmt, "id", $buyer_id, $grand_total);
             mysqli_stmt_execute($stmt);
             $order_id = mysqli_insert_id($db);
+            mysqli_stmt_close($stmt);
+
+            // Insert order details for each cart item
+            foreach ($cart_items as $item) {
+                $stmt = mysqli_prepare($db, "INSERT INTO orderdetails (ORDER_ID, TREESPECIES_ID, QUANTITY, PRICE) VALUES (?, ?, ?, ?)");
+                mysqli_stmt_bind_param($stmt, "iiid", $order_id, $item['tree_id'], $item['qty'], $item['price']);
+                mysqli_stmt_execute($stmt);
+                mysqli_stmt_close($stmt);
+            }
+
             mysqli_commit($db);
             $_SESSION['cart'] = [];
-            // Show success message with direct M-Pesa payment link
-            echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Order Placed</title>';
-            echo '<meta name="viewport" content="width=device-width, initial-scale=1">';
-            echo '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">';
-            echo '</head><body class="bg-light">';
-            echo '<div class="container py-5">';
-            echo '<div class="alert alert-success">Order placed successfully!<br>Your Order ID is <strong>' . intval($order_id) . '</strong>.</div>';
-            echo '<a href="mpesa.php?order_id=' . intval($order_id) . '&amount=' . number_format($grand_total,2,'.','') . '" class="btn btn-success">Pay with M-Pesa</a>';
-            echo '<a href="cash_payment.php?order_id=' . intval($order_id) . '" class="btn btn-warning ms-2">Pay with Cash</a>';
-            echo '<a href="buyer.php" class="btn btn-secondary ms-2">Back to Dashboard</a>';
-            echo '</div></body></html>';
+            // Redirect to dashboard with a success message
+            header("Location: buyer.php?order_success=1");
             exit();
-
         } catch (Exception $e) {
             mysqli_rollback($db);
             $error_msg = "Order failed: " . e($e->getMessage());
         }
-
     } else {
         $error_msg = "Cart is empty.";
     }
@@ -175,6 +174,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancel_order"])) {
     <div class="container-fluid">
         <a class="navbar-brand" href="#">Treez Buyer</a>
         <a href="static_map.html" class="btn btn-light ms-3">View Map</a>
+            <a href="my_orders.php" class="btn btn-warning ms-2">My Orders</a>
         <div class="ms-auto">
             <span class="text-white me-3">
                 Welcome, <?= e($_SESSION["username"]); ?>
@@ -186,20 +186,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancel_order"])) {
 
 <div class="container">
 
-<?php if ($success_msg): ?>
-<div class="alert alert-success"><?= e($success_msg); ?></div>
-<?php endif; ?>
-
-<?php if ($error_msg): ?>
-<div class="alert alert-danger"><?= e($error_msg); ?></div>
-<?php endif; ?>
-
 
 <!-- ------------------------------------------------------------
-     AVAILABLE TREES
+    AVAILABLE TREES (Now appears first)
 ------------------------------------------------------------ -->
 <h3>Available Trees</h3>
-<div class="row">
 <form method="GET" class="mb-3">
     <div class="input-group">
         <input type="text" name="search" id="searchInput" class="form-control" placeholder="Search by name..." value="<?= e($_GET['search'] ?? ''); ?>">
@@ -221,7 +212,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancel_order"])) {
   });
 </script>
 <div class="row">
-
 <?php
 $search = trim($_GET['search'] ?? '');
 if ($search !== '') {
@@ -243,7 +233,6 @@ if ($search !== '') {
 }
 mysqli_stmt_execute($stmt);
 $trees = mysqli_stmt_get_result($stmt);
-
 if (mysqli_num_rows($trees) === 0) {
         echo '<div class="col-12"><div class="alert alert-warning">No trees found.</div></div>';
 }
@@ -267,8 +256,10 @@ while ($tree = mysqli_fetch_assoc($trees)):
     </div>
 <?php endwhile; mysqli_stmt_close($stmt); ?>
 
+<!-- ------------------------------------------------------------
+    YOUR CART (Now appears after trees)
+------------------------------------------------------------ -->
 <h3>Your Cart</h3>
-
 <?php if (!empty($_SESSION['cart'])): ?>
 <form method="POST">
 <table class="table table-bordered">
@@ -281,11 +272,9 @@ while ($tree = mysqli_fetch_assoc($trees)):
 </tr>
 </thead>
 <tbody>
-
 <?php
 $grand_total = 0;
 foreach ($_SESSION['cart'] as $tree_id => $qty):
-
     $stmt = mysqli_prepare($db,
         "SELECT COMMON_NAME, PRICE FROM treespecies WHERE TREESPECIES_ID=?"
     );
@@ -294,7 +283,6 @@ foreach ($_SESSION['cart'] as $tree_id => $qty):
     $res = mysqli_stmt_get_result($stmt);
     $t = mysqli_fetch_assoc($res);
     mysqli_stmt_close($stmt);
-
     $line_total = $t['PRICE'] * $qty;
     $grand_total += $line_total;
 ?>
@@ -311,104 +299,16 @@ foreach ($_SESSION['cart'] as $tree_id => $qty):
         </td>
 </tr>
 <?php endforeach; ?>
-
 <tr>
   <td colspan="3"><strong>Grand Total</strong></td>
   <td><strong><?= number_format($grand_total,2); ?></strong></td>
 </tr>
 </tbody>
 </table>
-
 <button name="place_order" class="btn btn-success">Place Order</button>
 </form>
-
 <?php else: ?>
 <div class="alert alert-info">Your cart is empty.</div>
 <?php endif; ?>
 
 
-<!-- ------------------------------------------------------------
-     PAST ORDERS
-<h3 class="mt-4">My Orders</h3>
-
-<?php
-$stmt = mysqli_prepare(
-    $db,
-    "SELECT o.ORDER_ID, o.ORDER_DATE, o.ORDER_STATUS,
-            t.COMMON_NAME, od.QUANTITY, od.PRICE
-     FROM orders o
-     JOIN orderdetails od ON o.ORDER_ID = od.ORDER_ID
-     JOIN treespecies t ON od.TREESPECIES_ID = t.TREESPECIES_ID
-     WHERE o.BUYER_ID = ?
-     ORDER BY o.ORDER_DATE DESC"
-);
-mysqli_stmt_bind_param($stmt, "i", $buyer_id);
-mysqli_stmt_execute($stmt);
-$orders = mysqli_stmt_get_result($stmt);
-
-if (mysqli_num_rows($orders) > 0):
-?>
-<table class="table table-bordered">
-<thead>
-<tr>
-  <th>ID</th>
-  <th>Date</th>
-  <th>Status</th>
-<th>Tree</th>
-<th>Qty</th>
-<th>Price</th>
-<th>Total</th>
-<th>Action</th>
-  <th></th>
-</tr>
-</thead>
-<tbody>
-
-<?php while ($o = mysqli_fetch_assoc($orders)):
-    if ($o['ORDER_STATUS'] === 'CANCELLED') continue; // Skip cancelled orders
-    $item_total = $o['PRICE'] * $o['QUANTITY'];
-?>
-<tr>
-    <td><?= intval($o['ORDER_ID']); ?></td>
-    <td><?= e($o['ORDER_DATE']); ?></td>
-    <td>
-        <?php
-        $badge = match($o['ORDER_STATUS']) {
-                'COMPLETED' => 'success',
-                'PENDING'   => 'warning text-dark',
-                default     => 'danger'
-        };
-        ?>
-        <span class="badge bg-<?= $badge; ?>">
-            <?= e($o['ORDER_STATUS']); ?>
-        </span>
-    </td>
-
-    <td><?= e($o['COMMON_NAME']); ?></td>
-    <td><?= intval($o['QUANTITY']); ?></td>
-    <td><?= number_format($o['PRICE'],2); ?></td>
-    <td><strong><?= number_format($item_total,2); ?></strong></td>
-
-    <td>
-        <?php if ($o['ORDER_STATUS'] === "PENDING"): ?>
-        <form method="POST" style="display:inline;">
-            <input type="hidden" name="order_id" value="<?= intval($o['ORDER_ID']); ?>">
-            <button name="cancel_order" class="btn btn-danger btn-sm" onclick="return confirm('Cancel this order?');">Cancel</button>
-        </form>
-        <?php else: ?>
-        <span class="text-muted">-</span>
-        <?php endif; ?>
-    </td>
-</tr>
-<?php endwhile; ?>
-
-</tbody>
-</table>
-
-<?php else: ?>
-<div class="alert alert-info">No orders yet.</div>
-<?php endif; mysqli_stmt_close($stmt); ?>
-
-</div>
-</body>
-</html>
