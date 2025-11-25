@@ -96,8 +96,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["place_order"])) {
 
             mysqli_commit($db);
             $_SESSION['cart'] = [];
-            // Redirect to dashboard with a success message
-            header("Location: buyer.php?order_success=1");
+            // Fetch buyer's phone number
+            $phone = '';
+            $stmt = mysqli_prepare($db, "SELECT PHONE FROM users WHERE USER_ID = ?");
+            mysqli_stmt_bind_param($stmt, "i", $buyer_id);
+            mysqli_stmt_execute($stmt);
+            $res = mysqli_stmt_get_result($stmt);
+            if ($row = mysqli_fetch_assoc($res)) {
+                $phone = $row['PHONE'];
+            }
+            mysqli_stmt_close($stmt);
+            // Redirect to payment options page
+            header("Location: payment.php?order_id=$order_id&amount=$grand_total&phone=" . urlencode($phone));
             exit();
         } catch (Exception $e) {
             mysqli_rollback($db);
