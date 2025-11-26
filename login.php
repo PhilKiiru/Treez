@@ -17,7 +17,6 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION["username"] = $row["USERNAME"];
             $_SESSION["role"] = $row["ROLE"];
 
-            // Redirect based on role
             if($row["ROLE"] == "SELLER") {
                 header("Location: seller.php");
             } elseif ($row["ROLE"] == "BUYER") {
