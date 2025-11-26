@@ -7,7 +7,7 @@ if (!isset($_SESSION["user_id"]) || $_SESSION["role"] != "ADMIN") {
     exit();
 }
 
-// ----------------- DELETE USER -----------------
+
 if (isset($_GET['delete_user'])) {
     $delete_id = intval($_GET['delete_user']);
     if ($delete_id != $_SESSION["user_id"]) {
@@ -20,7 +20,7 @@ if (isset($_GET['delete_user'])) {
     exit();
 }
 
-// ----------------- CANCEL ORDER -----------------
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["cancel_order"])) {
     $order_id = intval($_POST["order_id"]);
     $stmt = mysqli_prepare($db, "UPDATE orders SET ORDER_STATUS='CANCELLED' WHERE ORDER_ID=? AND ORDER_STATUS='PENDING'");
@@ -31,7 +31,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["cancel_order"])) {
     exit();
 }
 
-// ----------------- DELETE ORDER -----------------
+
 if (isset($_GET["delete_order"])) {
     $order_id = intval($_GET["delete_order"]);
     $stmt = mysqli_prepare($db, "DELETE FROM orderdetails WHERE ORDER_ID=?");
@@ -67,7 +67,7 @@ if (isset($_GET["delete_order"])) {
     </nav>
 
     <div class="container">
-        <!-- Manage Users -->
+    
         <h3 class="mb-3">Manage Users</h3>
         <?php
         $users = mysqli_query($db, "SELECT USER_ID, USERNAME, EMAIL, PHONE, ROLE, LOCATION FROM users");
@@ -100,7 +100,7 @@ if (isset($_GET["delete_order"])) {
         }
         ?>
 
-        <!-- Manage Orders -->
+    
         <h3 class="mt-5 mb-3">Manage Orders</h3>
         <?php
         $orders = mysqli_query($db, "
@@ -150,7 +150,7 @@ if (isset($_GET["delete_order"])) {
                               <button type='submit' name='cancel_order' class='btn btn-sm btn-warning'>Cancel</button>
                           </form> ";
                 }
-                // Show 'Mark as Delivered' for paid but not completed/cancelled orders
+               
                 if (in_array($row['ORDER_STATUS'], ["PAID (CASH)", "PAID (MPESA)", "PROCESSING"])) {
                     echo "<form method='POST' class='d-inline ms-1'>
                               <input type='hidden' name='order_id' value='{$row['ORDER_ID']}'>

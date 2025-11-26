@@ -1,20 +1,18 @@
 <?php
-// M-Pesa Daraja STK Push Example (Sandbox)
-// Replace with your own credentials for production
 
-$consumerKey = "UqZ9EmAJvuPjjPjtCET1piEkvFZn6vQDy7YdqMLotpBhbiuO"; // Replace with your Consumer Key
-$consumerSecret = "BOc6MRTXQXCCGZddtA9r5FifOEBSxdrfKFAchutG6rXAWuIdDbDVwO3N1CgAS4MD"; // Replace with your Consumer Secret
-$shortCode = '174379'; // Test Shortcode
-$passkey = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'; // Test Passkey
-$callbackUrl = 'https://yourdomain.com/mpesa_callback.php'; // Change to your callback URL
+$consumerKey = "UqZ9EmAJvuPjjPjtCET1piEkvFZn6vQDy7YdqMLotpBhbiuO"; 
+$consumerSecret = "BOc6MRTXQXCCGZddtA9r5FifOEBSxdrfKFAchutG6rXAWuIdDbDVwO3N1CgAS4MD"; 
+$shortCode = '174379';
+$passkey = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'; 
+$callbackUrl = 'https://yourdomain.com/mpesa_callback.php'; 
 
 
-// Get phone and amount from POST (from my_orders.php form)
+
 $phone = isset($_POST['phone']) ? trim($_POST['phone']) : '';
 $amount = isset($_POST['amount']) ? floatval($_POST['amount']) : 1;
 
-// Validate and format phone number
-$phone = preg_replace('/\D/', '', $phone); // Remove non-digits
+
+$phone = preg_replace('/\D/', '', $phone);
 if (strpos($phone, '0') === 0) {
     $phone = '254' . substr($phone, 1);
 }
@@ -28,7 +26,6 @@ if (strlen($phone) !== 12 || strpos($phone, '2547') !== 0) {
     exit;
 }
 
-// 1. Get access token
 $url = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials';
 $credentials = base64_encode($consumerKey . ':' . $consumerSecret);
 
@@ -55,7 +52,7 @@ if ($httpcode !== 200 || !isset($token_data['access_token'])) {
 }
 $access_token = $token_data['access_token'];
 
-// 2. Prepare STK Push request
+
 $timestamp = date('YmdHis');
 $password = base64_encode($shortCode . $passkey . $timestamp);
 
@@ -85,7 +82,7 @@ curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($request));
 $result = curl_exec($ch);
 curl_close($ch);
 
-// Show a user-friendly message after submitting the STK Push
+
 header('Content-Type: text/html');
 $response = json_decode($result, true);
 if (isset($response['ResponseCode']) && $response['ResponseCode'] == '0') {

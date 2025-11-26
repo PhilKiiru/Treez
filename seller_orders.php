@@ -9,7 +9,6 @@ if (!isset($_SESSION["user_id"]) || $_SESSION["role"] != "SELLER") {
 
 $seller_id = intval($_SESSION["user_id"]);
 
-// Filter logic
 $filter_status = $_GET['filter_status'] ?? '';
 $where_status = '';
 if ($filter_status === 'accepted') {
@@ -27,16 +26,14 @@ $orders = mysqli_query($db, "
     ORDER BY DATE(o.ORDER_DATE) DESC, o.ORDER_DATE DESC
 ");
 
-// Accept or delete order logic
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['accept_order_id'])) {
         $oid = intval($_POST['accept_order_id']);
-        // Reduce stock for each tree in the order
         $details = mysqli_query($db, "SELECT TREESPECIES_ID, QUANTITY FROM orderdetails WHERE ORDER_ID = $oid");
         while ($d = mysqli_fetch_assoc($details)) {
             $tree_id = intval($d['TREESPECIES_ID']);
             $qty = intval($d['QUANTITY']);
-            // Reduce stock only if enough stock is available
             $check = mysqli_query($db, "SELECT STOCK FROM treespecies WHERE TREESPECIES_ID = $tree_id AND SELLER_ID = $seller_id");
             if ($row = mysqli_fetch_assoc($check)) {
                 $current_stock = intval($row['STOCK']);
@@ -45,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
-        // Update order status
+       
         $update = mysqli_prepare($db, "UPDATE orders SET ORDER_STATUS='PROCESSING' WHERE ORDER_ID=? AND ORDER_STATUS='PENDING'");
         mysqli_stmt_bind_param($update, "i", $oid);
         mysqli_stmt_execute($update);

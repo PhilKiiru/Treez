@@ -9,7 +9,7 @@ if (!isset($_SESSION["user_id"]) || $_SESSION["role"] != "SELLER") {
 
 $seller_id = intval($_SESSION["user_id"]);
 
-// ----------------- ACCEPT ORDER (SELLER) -----------------
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["accept_order"])) {
     $order_id = intval($_POST["order_id"]);
     $status = 'PROCESSING';
@@ -21,7 +21,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["accept_order"])) {
     exit();
 }
 
-// ----------------- CANCEL ORDER (SELLER) -----------------
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["cancel_order"])) {
     $order_id = intval($_POST["order_id"]);
     $stmt = mysqli_prepare($db, "
@@ -39,7 +39,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["cancel_order"])) {
 }
 
 
-// ----------------- ADD NEW SEEDLING -----------------
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_treeseedling"])) {
     if (
         isset($_POST["name"], $_POST["scientific_name"], $_POST["price"], $_POST["stock"]) &&
@@ -51,7 +51,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_treeseedling"])) {
         $stock = intval($_POST["stock"]);
         $description = isset($_POST["description"]) ? trim($_POST["description"]) : '';
 
-        // Check for duplicate COMMON_NAME for this seller
+      
         $dup_check = mysqli_prepare($db, "SELECT 1 FROM treespecies WHERE COMMON_NAME = ? AND SELLER_ID = ?");
         mysqli_stmt_bind_param($dup_check, "si", $name, $seller_id);
         mysqli_stmt_execute($dup_check);
@@ -82,7 +82,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_treeseedling"])) {
     }
 }
 
-// ----------------- EDIT SEEDLING -----------------
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["edit_treeseedling"])) {
     $tree_id = intval($_POST["tree_id"]);
     $name = trim($_POST["name"]);
@@ -91,7 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["edit_treeseedling"])) 
     $stock = intval($_POST["stock"]);
     $description = trim($_POST["description"] ?? '');
 
-    // Check for duplicate COMMON_NAME + SCIENTIFIC_NAME for this seller, excluding this tree_id
+   
     $dup_check = mysqli_prepare($db, "SELECT 1 FROM treespecies WHERE COMMON_NAME = ? AND SCIENTIFIC_NAME = ? AND SELLER_ID = ? AND TREESPECIES_ID != ?");
     mysqli_stmt_bind_param($dup_check, "ssii", $name, $scientific, $seller_id, $tree_id);
     mysqli_stmt_execute($dup_check);
@@ -112,7 +112,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["edit_treeseedling"])) 
     }
 }
 
-// ----------------- DELETE SEEDLING -----------------
+
 if (isset($_GET["delete_id"])) {
     $delete_id = intval($_GET["delete_id"]);
     $stmt = mysqli_prepare($db, "DELETE FROM treespecies WHERE TREESPECIES_ID=? AND SELLER_ID=?");
@@ -123,7 +123,7 @@ if (isset($_GET["delete_id"])) {
     header("Location: seller.php");
     exit();
 }
-// End PHP logic, now start HTML
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -156,11 +156,10 @@ if (isset($_GET["delete_id"])) {
 </nav>
 
 <div class="container">
-        <!-- Charts Section (hidden by default) -->
-        <!-- Seller Insights moved to a separate page (seller_insights.php) -->
+       
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <?php
-        // Pie chart data: top 5 most sold seedlings for this seller
+
         $pie = mysqli_query($db, "SELECT t.COMMON_NAME, SUM(od.QUANTITY) as total_sold FROM orderdetails od JOIN treespecies t ON od.TREESPECIES_ID = t.TREESPECIES_ID WHERE t.SELLER_ID = $seller_id GROUP BY t.COMMON_NAME ORDER BY total_sold DESC LIMIT 5");
         $pie_labels = [];
         $pie_data = [];
@@ -170,10 +169,10 @@ if (isset($_GET["delete_id"])) {
         }
         ?>
         <script>
-        // ...existing code...
+        
         </script>
 
-    <!-- Add/Edit Seedling -->
+
     <h3 class="mb-3">Add New Seedling</h3>
     <form method="POST" action="" enctype="multipart/form-data" class="mb-5">
         <div class="row g-3">

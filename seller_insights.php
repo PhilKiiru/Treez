@@ -1,16 +1,16 @@
 <?php
-// Load recommendations from CSV for PHP display
+
 $rec_map = [];
 if (($handle = fopen("ml/recommendations.csv", "r")) !== FALSE) {
     $header = fgetcsv($handle);
     while (($data = fgetcsv($handle)) !== FALSE) {
         $ant = trim($data[0]);
         $con = trim($data[1]);
-        // Only use single-item antecedents (no comma)
+        
         if ($ant !== '' && strpos($ant, ',') === false) {
             $a_name_lc = strtolower($ant);
             if (!isset($rec_map[$a_name_lc])) $rec_map[$a_name_lc] = [];
-            // Consequent may be a set, but we only use the first if comma-separated
+            
             $consequents = array_map('trim', explode(',', $con));
             foreach ($consequents as $c_name) {
                 if ($c_name !== '') {
@@ -43,7 +43,7 @@ $seller_id = intval($_SESSION["user_id"]);
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
     <div class="container-fluid">
-            <!-- Removed Seller Insights brand from navbar -->
+            
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item">
                 <a class="nav-link fw-bold text-white" href="seller.php">&larr; Back to Seller Dashboard</a>
@@ -70,7 +70,7 @@ $seller_id = intval($_SESSION["user_id"]);
         </div>
         <div class="col-md-6">
 <?php
-// Pie chart data: top 5 most ordered seedlings from the training CSV (matches notebook/bar chart)
+
 $pie_counts = [];
 if (($handle = fopen('Machine learning/philkiiru_orders.csv', 'r')) !== FALSE) {
     $header = fgetcsv($handle);
@@ -91,7 +91,7 @@ $pie_data = array_slice(array_values($pie_counts), 0, 5);
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
-        // Recommendations data from PHP
+        
         const recMap = <?php echo json_encode($rec_map); ?>;
         var recResult = document.getElementById('recResult');
         document.getElementById('recSearchInput').addEventListener('input', function() {
@@ -99,11 +99,11 @@ $pie_data = array_slice(array_values($pie_counts), 0, 5);
             recResult.innerHTML = '';
             if (!filter) return;
             if (recMap[filter]) {
-                // Remove duplicates
+               
                 const uniqueRecs = Array.from(new Set(recMap[filter]));
                 recResult.innerHTML = `<div class='card mt-2'><div class='card-body'><strong>${filter.charAt(0).toUpperCase() + filter.slice(1)}</strong><br>Recommended Seedlings: <span class='text-success'>${uniqueRecs.map(r => r.charAt(0).toUpperCase() + r.slice(1)).join(', ')}</span></div></div>`;
             } else {
-                // Try partial/fuzzy match
+                
                 const foundKey = Object.keys(recMap).find(k => k.replace(/\s+/g, '') === filter.replace(/\s+/g, ''));
                 if (foundKey) {
                     const uniqueRecs = Array.from(new Set(recMap[foundKey]));
@@ -115,7 +115,7 @@ $pie_data = array_slice(array_values($pie_counts), 0, 5);
         });
         </script>
     <script>
-    // Pie chart for most selling seedlings
+    
     const pieCtx = document.getElementById('salesPieChart').getContext('2d');
     new Chart(pieCtx, {
         type: 'pie',

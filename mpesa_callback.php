@@ -1,6 +1,4 @@
 <?php
-// M-Pesa Callback Handler Example
-// This file receives payment results from Safaricom
 
 echo json_encode(["ResultCode" => 0, "ResultDesc" => "Accepted"]);
 
@@ -23,14 +21,14 @@ if (isset($callback['Body']['stkCallback'])) {
             if ($item['Name'] === 'PhoneNumber') $phone = $item['Value'];
         }
     }
-    // Mark order as paid if payment is successful
+    
     if ($resultCode == 0 && $phone && $amount) {
-        // Find the most recent pending order for this phone and amount
+        
         $phone = mysqli_real_escape_string($db, $phone);
         $amount = floatval($amount);
         $sql = "UPDATE orders o JOIN users u ON o.BUYER_ID = u.USER_ID SET o.ORDER_STATUS='PROCESSING', o.PAYMENT_REF='" . mysqli_real_escape_string($db, $mpesaReceipt) . "' WHERE u.PHONE='$phone' AND o.TOTAL_PRICE=$amount AND o.ORDER_STATUS='PENDING' ORDER BY o.ORDER_ID DESC LIMIT 1";
         mysqli_query($db, $sql);
-        // Optionally, log the payment
+
         file_put_contents('mpesa_payments.txt', "Accepted: $amount, Receipt: $mpesaReceipt, Phone: $phone\n", FILE_APPEND);
     }
 }

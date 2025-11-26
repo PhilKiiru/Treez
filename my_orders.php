@@ -6,7 +6,7 @@ if (!isset($_SESSION["user_id"]) || $_SESSION["role"] !== "BUYER") {
     header("Location: login.php");
     exit();
 }
-// Fetch buyer's phone number from DB
+
 $buyer_id = intval($_SESSION['user_id']);
 function e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 $buyer_phone = '';
@@ -59,7 +59,7 @@ mysqli_stmt_bind_param($stmt, "i", $buyer_id);
 mysqli_stmt_execute($stmt);
 $orders = mysqli_stmt_get_result($stmt);
 if (mysqli_num_rows($orders) > 0):
-// Group orders by day
+
 $orders_by_day = [];
 while ($row = mysqli_fetch_assoc($orders)) {
     $date = date('Y-m-d', strtotime($row['ORDER_DATE']));

@@ -1,11 +1,9 @@
 <?php
-// buyer.php – Fully rewritten & optimized
 
 session_start();
 require_once "db.php";
 require_once "recommend.php";
 
-// ---------------- AUTH CHECK ----------------
 if (!isset($_SESSION["user_id"]) || $_SESSION["role"] !== "BUYER") {
     header("Location: login.php");
     exit();
@@ -17,12 +15,9 @@ $error_msg   = $error_msg ?? null;
 
 if (!isset($_SESSION['cart'])) $_SESSION['cart'] = [];
 
-// Helper for safe output
 function e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
-// ------------------------------------------------
-// REMOVE FROM CART
-// ------------------------------------------------
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_from_cart'])) {
     $tree_id = intval($_POST['tree_id'] ?? 0);
     if ($tree_id > 0 && isset($_SESSION['cart'][$tree_id])) {
@@ -32,9 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_from_cart'])) 
     exit();
 }
 
-// ------------------------------------------------
-// ADD TO CART
-// ------------------------------------------------
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
 
     $tree_id  = intval($_POST['tree_id'] ?? 0);
@@ -48,18 +41,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
     exit();
 }
 
-// ------------------------------------------------
-// PLACE ORDER
-// ------------------------------------------------
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["place_order"])) {
 
     if (!empty($_SESSION["cart"])) {
-        // Start transaction
         mysqli_begin_transaction($db);
         try {
             $grand_total = 0;
             $cart_items = [];
-            // Validate stock and compute total
+        
             foreach ($_SESSION["cart"] as $tree_id => $qty) {
                 $stmt = mysqli_prepare($db, "SELECT PRICE, STOCK FROM treespecies WHERE TREESPECIES_ID=?");
                 mysqli_stmt_bind_param($stmt, "i", $tree_id);
@@ -76,7 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["place_order"])) {
                     'price' => floatval($row['PRICE'])
                 ];
             }
-            // Insert order
+
             $stmt = mysqli_prepare($db,
                 "INSERT INTO orders (BUYER_ID, TOTAL_PRICE, ORDER_STATUS, ORDER_DATE)
                  VALUES (?, ?, 'PENDING', NOW())"
@@ -86,7 +75,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["place_order"])) {
             $order_id = mysqli_insert_id($db);
             mysqli_stmt_close($stmt);
 
-            // Insert order details for each cart item
+            
             foreach ($cart_items as $item) {
                 $stmt = mysqli_prepare($db, "INSERT INTO orderdetails (ORDER_ID, TREESPECIES_ID, QUANTITY, PRICE) VALUES (?, ?, ?, ?)");
                 mysqli_stmt_bind_param($stmt, "iiid", $order_id, $item['tree_id'], $item['qty'], $item['price']);
@@ -96,7 +85,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["place_order"])) {
 
             mysqli_commit($db);
             $_SESSION['cart'] = [];
-            // Fetch buyer's phone number
+            
             $phone = '';
             $stmt = mysqli_prepare($db, "SELECT PHONE FROM users WHERE USER_ID = ?");
             mysqli_stmt_bind_param($stmt, "i", $buyer_id);
@@ -106,7 +95,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["place_order"])) {
                 $phone = $row['PHONE'];
             }
             mysqli_stmt_close($stmt);
-            // Redirect to orders page (no payment options)
+           
             header("Location: my_orders.php?order_placed=1");
             exit();
         } catch (Exception $e) {
@@ -119,9 +108,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["place_order"])) {
 }
 
 
-// ------------------------------------------------
-// CANCEL ORDER
-// ------------------------------------------------
+
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancel_order"])) {
 
     $order_id = intval($_POST["order_id"] ?? 0);
@@ -197,9 +184,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancel_order"])) {
 <div class="container">
 
 
-<!-- ------------------------------------------------------------
-    AVAILABLE TREES (Now appears first)
------------------------------------------------------------- -->
+
 <h3>Available Trees</h3>
 <form method="GET" class="mb-3">
     <div class="input-group">
@@ -208,7 +193,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancel_order"])) {
     </div>
 </form>
 <script>
-// Auto-submit the form if search is cleared
+
   document.addEventListener('DOMContentLoaded', function() {
     var searchInput = document.getElementById('searchInput');
     var form = searchInput && searchInput.form;
@@ -266,9 +251,7 @@ while ($tree = mysqli_fetch_assoc($trees)):
     </div>
 <?php endwhile; mysqli_stmt_close($stmt); ?>
 
-<!-- ------------------------------------------------------------
-    YOUR CART (Now appears after trees)
------------------------------------------------------------- -->
+
 <h3>Your Cart</h3>
 <?php if (!empty($_SESSION['cart'])): ?>
 <form method="POST">

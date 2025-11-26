@@ -1,10 +1,9 @@
 <?php
-// tree_details.php
 
 require_once "db.php";
 require_once "recommend.php";
 
-// Get tree ID from query string
+
 $tree_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if ($tree_id <= 0) {
     echo "<div style='color:red;text-align:center;'>Invalid tree ID.</div>";
@@ -26,7 +25,7 @@ if (!$tree) {
 
 function e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
-// Get recommendations for this tree
+
 $recs = get_recommendations($tree['COMMON_NAME']);
 ?>
 <!DOCTYPE html>

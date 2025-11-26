@@ -1,3 +1,87 @@
+.services-section-main {
+    width: 100vw;
+    background: #f0f8f0;
+    text-align: center;
+    padding: 60px 0 40px 0;
+    font-size: 1.18rem;
+    color: #176b2c;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    box-shadow: 0 -2px 8px #21b32c11;
+    margin-top: 40px;
+}
+.services-section-main h1 {
+    color: #218c2c;
+    font-size: 2rem;
+    margin-bottom: 12px;
+}
+.services-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 auto;
+    max-width: 500px;
+}
+.services-list li {
+    background: #e8ffe8;
+    margin: 10px 0;
+    padding: 14px 0;
+    border-radius: 8px;
+    font-size: 1.08rem;
+    box-shadow: 0 1px 4px #21b32c11;
+}
+.contact-section-main {
+    width: 100vw;
+    background: #e8ffe8;
+    text-align: center;
+    padding: 60px 0 40px 0;
+    font-size: 1.18rem;
+    color: #176b2c;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    box-shadow: 0 -2px 8px #21b32c11;
+    margin-top: 40px;
+}
+.contact-section-main h1 {
+    color: #218c2c;
+    font-size: 2rem;
+    margin-bottom: 12px;
+}
+.homepage-contact-section {
+    width: 100vw;
+    background: #e8ffe8;
+    text-align: center;
+    padding: 32px 0 24px 0;
+    font-size: 1.18rem;
+    color: #176b2c;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    box-shadow: 0 -2px 8px #21b32c11;
+    margin-top: 40px;
+}
+.homepage-contact-section h2 {
+    color: #218c2c;
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+}
+.homepage-contact-number-main {
+    font-size: 1.35rem;
+    color: #218c2c;
+    font-weight: 700;
+    margin-top: 8px;
+}
+.homepage-contact-number {
+    width: 100vw;
+    background: #f6fff6;
+    text-align: center;
+    padding: 10px 0 6px 0;
+    font-size: 1.13rem;
+    color: #176b2c;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    box-shadow: 0 1px 4px #21b32c11;
+    margin-bottom: 10px;
+    z-index: 20;
+}
 @import url('https://fonts.cdnfonts.com/css/poppins');
 
 * { 
@@ -7,7 +91,6 @@
     font-family: 'Poppins', sans-serif;
 }
 
-/* --- MAIN PAGE BODY STYLE (for forms/wrappers) --- */
 body {
     display: flex;
     justify-content: center;
@@ -18,17 +101,16 @@ body {
     background-position: center;
 }
 
-/* --- STATIC MAP PAGE OVERRIDE STYLE --- */
-/* This class ensures the map page does not use the flex centering, which causes layout problems */
+
 .map-page-body {
-    display: block; /* Overrides the flex layout */
+    display: block; 
     min-height: auto;
     background: #eef7ee; 
     text-align: center;
     padding-top: 20px;
 }
 
-/* --- STATIC MAP IMAGE STYLES --- */
+
 .static-map-container {
     margin: 40px auto;
     width: 700px; 
@@ -40,7 +122,7 @@ body {
 .static-map-img {
     display: block;
     width: 100%;
-    height: 550px; /* Explicit height to match the image dimensions in the URL */
+    height: 550px; 
 }
 
 .map-legend {
@@ -52,7 +134,7 @@ body {
 }
 
 
-/* --- HEADER AND NAVIGATION STYLES (Your Original Code) --- */
+
 header {
     position: fixed;
     top: 0;
@@ -120,7 +202,7 @@ header {
     color: #162938;
 }
 
-/* --- WRAPPER AND FORM STYLES (Your Original Code) --- */
+
 .wrapper {
     margin-top: 85px;
     position: relative;
