@@ -4,7 +4,7 @@ echo json_encode(["ResultCode" => 0, "ResultDesc" => "Accepted"]);
 
 include_once('db.php');
 $data = file_get_contents('php://input');
-file_put_contents('mpesa_callback_log.txt', $data . "\n", FILE_APPEND); // Log for debugging
+file_put_contents('mpesa_callback_log.txt', $data . "\n", FILE_APPEND); 
 $callback = json_decode($data, true);
 
 if (isset($callback['Body']['stkCallback'])) {
