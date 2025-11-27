@@ -145,9 +145,6 @@ if (isset($_GET["delete_id"])) {
                 <a class="nav-link fw-bold text-white" href="seller_orders.php">Seller Orders</a>
             </li>
         </ul>
-            <span class="navbar-text text-white ms-auto">
-                Welcome, <?= htmlspecialchars($_SESSION["username"]); ?> (Seller)
-            </span>
         <span class="navbar-text text-white ms-auto">
             Welcome, <?= htmlspecialchars($_SESSION["username"]); ?> (Seller)
         </span>
@@ -157,20 +154,6 @@ if (isset($_GET["delete_id"])) {
 
 <div class="container">
        
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <?php
-
-        $pie = mysqli_query($db, "SELECT t.COMMON_NAME, SUM(od.QUANTITY) as total_sold FROM orderdetails od JOIN treespecies t ON od.TREESPECIES_ID = t.TREESPECIES_ID WHERE t.SELLER_ID = $seller_id GROUP BY t.COMMON_NAME ORDER BY total_sold DESC LIMIT 5");
-        $pie_labels = [];
-        $pie_data = [];
-        while($r = mysqli_fetch_assoc($pie)) {
-                $pie_labels[] = $r['COMMON_NAME'];
-                $pie_data[] = (int)$r['total_sold'];
-        }
-        ?>
-        <script>
-        
-        </script>
 
 
     <h3 class="mb-3">Add New Seedling</h3>

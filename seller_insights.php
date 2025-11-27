@@ -127,8 +127,14 @@ $pie_data = array_slice(array_values($pie_counts), 0, 5);
             }]
         },
         options: {
-            plugins: { legend: { position: 'bottom' } },
-            title: { display: true, text: 'Top 5 Most Selling Seedlings' }
+            plugins: {
+                legend: { position: 'bottom' },
+                title: {
+                    display: true,
+                    text: 'Top 5 Most Selling Seedlings',
+                    font: { size: 20 }
+                }
+            }
         }
     });
     </script>
